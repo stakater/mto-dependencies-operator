@@ -1,0 +1,39 @@
+{{- if .Values.priceBook.enabled }}
+apiVersion: finops.stakater.com/v1alpha1
+kind: PriceBook
+metadata:
+  labels:
+    app.kubernetes.io/name: pricebook
+    app.kubernetes.io/instance: default-pricing
+    app.kubernetes.io/part-of: finops-operator
+    finops.stakater.com/active: "true"
+  name: {{ .Release.Name }}-default-pricing
+  namespace: {{ .Release.Namespace }}
+spec:
+  currency: {{ .Values.priceBook.currency | default "USD" }}
+  valuationMode: {{ .Values.priceBook.valuationMode | default "currency" }}
+  {{- if .Values.priceBook.rates }}
+  rates:
+    {{- if .Values.priceBook.rates.cpuHour }}
+    cpuHour: {{ .Values.priceBook.rates.cpuHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.spotCPUHour }}
+    spotCPUHour: {{ .Values.priceBook.rates.spotCPUHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.ramGbHour }}
+    ramGbHour: {{ .Values.priceBook.rates.ramGbHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.spotRAMGbHour }}
+    spotRAMGbHour: {{ .Values.priceBook.rates.spotRAMGbHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.pvGbHour }}
+    pvGbHour: {{ .Values.priceBook.rates.pvGbHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.gpuHour }}
+    gpuHour: {{ .Values.priceBook.rates.gpuHour | quote }}
+    {{- end }}
+    {{- if .Values.priceBook.rates.networkGiB }}
+    networkGiB: {{ .Values.priceBook.rates.networkGiB | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}

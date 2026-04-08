@@ -1,0 +1,85 @@
+controllerManager:
+  manager:
+    args:
+      - --metrics-bind-address=:8443
+      - --leader-elect
+      - --health-probe-bind-address=:8081
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    env:
+      mtoEnabled: "false"
+      opencostDeploymentName: finops-operator-opencost
+      opencostDeploymentNamespace: finops-operator-system
+    image:
+      repository: ghcr.io/stakater/finops-operator
+      tag: v0.1.16
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+finopsGatewayGateway:
+  finopsGatewayContainer:
+    containerSecurityContext: {}
+    env:
+      allowedOrigins: ""
+      enableAuth: "false"
+      mtoGatewayUrl: ""
+      port: "8080"
+    image:
+      repository: ghcr.io/stakater/finops-gateway
+      tag: v0.0.1-dc1b14fc
+  replicas: 1
+finopsGatewayService:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+imagePullSecrets: []
+kubernetesClusterDomain: cluster.local
+metricsService:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  type: ClusterIP
+finopsGatewayIngress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+  rules: []
+costJob:
+  enabled: false
+  interval: 1m
+  databaseInitTimeout: ""
+  k8sOperationTimeout: ""
+  openCostFetchTimeout: ""
+  databaseInsertTimeout: ""
+  databaseViewsRefreshTimeout: ""
+  statusUpdateTimeout: ""
+  httpClientTimeout: ""
+priceBook:
+  enabled: false
+  currency: USD
+  valuationMode: currency
+  rates:
+    cpuHour: ""
+    spotCPUHour: ""
+    ramGbHour: ""
+    spotRAMGbHour: ""
+    pvGbHour: ""
+    gpuHour: ""
+    networkGiB: ""
+secrets:
+  prometheus: finops-operator-prometheus-config
+  postgres: finops-operator-postgres-config
+  opencost: finops-operator-opencost-config

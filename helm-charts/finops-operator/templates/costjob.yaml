@@ -1,0 +1,34 @@
+{{- if .Values.costJob.enabled }}
+apiVersion: finops.stakater.com/v1alpha1
+kind: CostJob
+metadata:
+  labels:
+    app.kubernetes.io/name: costjob
+    app.kubernetes.io/instance: daily-scraping-job
+    app.kubernetes.io/part-of: finops-operator
+  name: {{ .Release.Name }}-daily-scraping-job
+  namespace: {{ .Release.Namespace }}
+spec:
+  interval: {{ .Values.costJob.interval | default "1m" }}
+  {{- if .Values.costJob.databaseInitTimeout }}
+  databaseInitTimeout: {{ .Values.costJob.databaseInitTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.k8sOperationTimeout }}
+  k8sOperationTimeout: {{ .Values.costJob.k8sOperationTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.openCostFetchTimeout }}
+  openCostFetchTimeout: {{ .Values.costJob.openCostFetchTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.databaseInsertTimeout }}
+  databaseInsertTimeout: {{ .Values.costJob.databaseInsertTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.databaseViewsRefreshTimeout }}
+  databaseViewsRefreshTimeout: {{ .Values.costJob.databaseViewsRefreshTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.statusUpdateTimeout }}
+  statusUpdateTimeout: {{ .Values.costJob.statusUpdateTimeout }}
+  {{- end }}
+  {{- if .Values.costJob.httpClientTimeout }}
+  httpClientTimeout: {{ .Values.costJob.httpClientTimeout }}
+  {{- end }}
+{{- end }}

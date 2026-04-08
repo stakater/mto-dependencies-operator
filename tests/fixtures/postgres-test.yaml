@@ -1,0 +1,38 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: Postgres
+metadata:
+  name: postgres-test
+spec:
+  image:
+    repository: "postgres"
+    tag: "trixie"
+  auth:
+    enablePostgresUser: true
+    postgresPassword: "test-password"
+    username: "testuser"
+    password: "testpass"
+    database: "testdb"
+  primary:
+    persistence:
+      enabled: false
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      type: ClusterIP
+      ports:
+        postgresql: 5432
+  readReplicas:
+    replicaCount: 0
+  metrics:
+    enabled: false
+  networkPolicy:
+    enabled: false

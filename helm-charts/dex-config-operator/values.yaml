@@ -1,0 +1,109 @@
+controllerManager:
+  manager:
+    args:
+      - --metrics-bind-address=:8443
+      - --leader-elect
+      - --health-probe-bind-address=:8081
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    env:
+      dexConfigSecret: dex
+      dexDeployment: dex
+      dexNamespace: dex
+    image:
+      repository: ghcr.io/stakater/public/dex-config-operator
+      tag: v0.0.3
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  nodeSelector: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  tolerations: []
+  topologySpreadConstraints: []
+imagePullSecrets: []
+kubernetesClusterDomain: cluster.local
+metricsSvc:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
+defaultResources:
+  dexConfig:
+    enabled: false
+    name: dex-config
+    issuer: https://dex.example.com
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+      configSecretRef: null
+    web:
+      http: 0.0.0.0:5556
+      https: null
+      tlsCert: null
+      tlsKey: null
+    oauth2:
+      skipApprovalScreen: true
+      alwaysShowLoginScreen: false
+      passwordConnector: null
+      responseTypes: null
+    expiry:
+      signingKeys: 6h
+      idTokens: 24h
+      authRequests: null
+      deviceRequests: null
+      refreshTokens: null
+  connectors:
+    - enabled: false
+      name: example-connector
+      type: oidc
+      id: example-connector
+      configSecretRef:
+        name: example-connector-config
+        key: config
+      createSecret: false
+      secretData: ""
+  localUsers:
+    - enabled: false
+      name: example-user
+      userID: "1234567890"
+      credentialSecretRef:
+        name: example-user-credentials
+        key: credentials
+      createSecret: false
+      secretData:
+        username: ""
+        email: ""
+        password: ""
+        groups: []
+  clients:
+    - enabled: false
+      name: example-client
+      id: example-client
+      clientName: Example Client
+      redirectURIs:
+        - http://localhost:5556/callback
+      public: true
+      secretRef: null
+      createSecret: false
+      secretData: ""
+      trustedPeers: []
+      logoURL: null

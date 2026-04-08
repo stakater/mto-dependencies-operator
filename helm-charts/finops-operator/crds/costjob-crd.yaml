@@ -1,0 +1,148 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: costjobs.finops.stakater.com
+spec:
+  group: finops.stakater.com
+  names:
+    kind: CostJob
+    listKind: CostJobList
+    plural: costjobs
+    singular: costjob
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.interval
+      name: Interval
+      type: string
+    - jsonPath: .status.lastExecutionStatus
+      name: Last Status
+      type: string
+    - jsonPath: .status.lastExecutionTime
+      name: Last Execution
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CostJob is the Schema for the costjobs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CostJobSpec defines the desired state of CostJob.
+            properties:
+              databaseInitTimeout:
+                default: 2m
+                description: DatabaseInitTimeout is the timeout for database initialization
+                type: string
+              databaseInsertTimeout:
+                default: 3m
+                description: DatabaseInsertTimeout is the timeout for database insert
+                  operations
+                type: string
+              databaseViewsRefreshTimeout:
+                default: 5m
+                description: DatabaseViewsRefreshTimeout is the timeout for refreshing
+                  database views
+                type: string
+              httpClientTimeout:
+                default: 90s
+                description: HTTPClientTimeout is the timeout for HTTP client requests
+                type: string
+              interval:
+                default: 24h
+                type: string
+              kubernetesOperationTimeout:
+                default: 1m
+                description: KubernetesOperationTimeout is the timeout for Kubernetes
+                  API operations
+                type: string
+              openCostFetchTimeout:
+                default: 2m
+                description: OpenCostFetchTimeout is the timeout for fetching data
+                  from OpenCost
+                type: string
+              statusUpdateTimeout:
+                default: 1m
+                description: StatusUpdateTimeout is the timeout for status update
+                  operations
+                type: string
+            required:
+            - interval
+            type: object
+          status:
+            description: CostJobStatus defines the observed state of CostJob
+            properties:
+              executionHistory:
+                description: History of the last 10 executions
+                items:
+                  description: ExecutionRecord represents a single execution attempt
+                  properties:
+                    duration:
+                      description: Duration of the execution
+                      type: string
+                    error:
+                      description: Error message if the execution failed
+                      type: string
+                    executionTime:
+                      description: The time when this execution started
+                      format: date-time
+                      type: string
+                    status:
+                      description: Status of the execution (Success, Failed, Error)
+                      enum:
+                      - Success
+                      - Failed
+                      - Error
+                      type: string
+                  required:
+                  - executionTime
+                  - status
+                  type: object
+                type: array
+              lastExecutionStatus:
+                description: Status of the last execution
+                enum:
+                - Success
+                - Failed
+                - Error
+                - Pending
+                type: string
+              lastExecutionTime:
+                description: Last execution time
+                format: date-time
+                type: string
+              lastSuccessfulExecutionTime:
+                description: Last successful execution time
+                format: date-time
+                type: string
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+

@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: finops-operator-costjob-viewer-role
+  labels:
+  {{- include "finops-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - costjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - costjobs/status
+  verbs:
+  - get

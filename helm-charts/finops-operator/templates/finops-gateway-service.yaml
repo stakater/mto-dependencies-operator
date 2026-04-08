@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: finops-operator-finops-gateway-service
+  labels:
+    app: finops-gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: finops-operator
+  {{- include "finops-operator.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.finopsGatewayService.type }}
+  selector:
+    app: gateway
+    {{- include "finops-operator.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.finopsGatewayService.ports | toYaml | nindent 2 }}

@@ -1,0 +1,24 @@
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+
+
+# Helm packaged charts
+dist/*.tgz
+
+# Generated Helm charts (can be regenerated with make helmify)
+# charts
+gitignore
+makefiles
+bundle/

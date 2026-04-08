@@ -1,0 +1,26 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: Prometheus
+metadata:
+  name: prometheus-test
+spec:
+  server:
+    replicaCount: 1
+    persistentVolume:
+      enabled: false
+    emptyDir:
+      sizeLimit: "2Gi"
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    retention: "1d"
+    service:
+      type: ClusterIP
+  configmapReload:
+    prometheus:
+      enabled: true
+  rbac:
+    create: true

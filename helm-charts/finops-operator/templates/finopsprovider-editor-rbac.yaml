@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: finops-operator-finopsprovider-editor-role
+  labels:
+  {{- include "finops-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - finopsproviders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - finopsproviders/status
+  verbs:
+  - get

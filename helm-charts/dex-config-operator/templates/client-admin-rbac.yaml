@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "dex-config-operator.fullname" . }}-client-admin-role
+  labels:
+  {{- include "dex-config-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - auth.stakater.com
+  resources:
+  - clients
+  verbs:
+  - '*'
+- apiGroups:
+  - auth.stakater.com
+  resources:
+  - clients/status
+  verbs:
+  - get

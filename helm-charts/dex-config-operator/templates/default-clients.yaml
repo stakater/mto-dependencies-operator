@@ -1,0 +1,51 @@
+{{- range $index, $client := .Values.defaultResources.clients }}
+{{- if $client.enabled }}
+---
+apiVersion: auth.stakater.com/v1alpha1
+kind: Client
+metadata:
+  name: {{ $client.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+spec:
+  id: {{ $client.id }}
+  name: {{ $client.clientName }}
+  redirectURIs:
+    {{- toYaml $client.redirectURIs | nindent 4 }}
+  public: {{ $client.public }}
+  {{- if $client.secretRef }}
+  secretRef:
+    name: {{ $client.secretRef.name }}
+    {{- if $client.secretRef.namespace }}
+    namespace: {{ $client.secretRef.namespace }}
+    {{- end }}
+    {{- if $client.secretRef.key }}
+    key: {{ $client.secretRef.key }}
+    {{- end }}
+  {{- end }}
+  {{- if $client.trustedPeers }}
+  trustedPeers:
+    {{- toYaml $client.trustedPeers | nindent 4 }}
+  {{- end }}
+  {{- if $client.logoURL }}
+  logoURL: {{ $client.logoURL }}
+  {{- end }}
+  {{- if hasKey $client "specEnabled" }}
+  enabled: {{ $client.specEnabled }}
+  {{- else }}
+  enabled: true
+  {{- end }}
+{{- if and $client.createSecret (not $client.public) $client.secretRef }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $client.secretRef.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+type: Opaque
+stringData:
+  {{ $client.secretRef.key | default "secret" }}: {{ $client.secretData | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,39 @@
+apiVersion: dex.stakater.cloud/v1alpha1
+kind: Dex
+metadata:
+  name: dex-sample
+spec: 
+  config:
+    issuer: http://127.0.0.1:5556/dex
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    web:
+      http: 0.0.0.0:5556
+    connectors:
+    - type: oidc
+      id: keycloak
+      name: Keycloak
+      config:
+        issuer: https://tenant-operator-keycloak-multi-tenant-operator.apps.xy1462m7s.stakater.cloud/realms/mto
+        clientID: mto-console
+        redirectURI: http://127.0.0.1:5556/dex/callback
+        scopes:
+        - openid
+        - profile
+        - email
+
+    staticClients:
+    - id: mto-console
+      redirectURIs:
+      - 'http://localhost:3000'
+      name: 'Example App'
+      public: true
+      # secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+    staticPasswords:
+    - email: "admin@example.com"
+      username: "admin"
+      userID: "1234567890"
+      hash: '$2y$10$PVz4UaAV5tj6PPVZXV4OYuAVKrZ.lF8x/d5bUECy0KZNiNWCDiN4a'
+    enablePasswordDB: true

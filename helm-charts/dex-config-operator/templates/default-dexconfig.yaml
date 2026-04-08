@@ -1,0 +1,128 @@
+{{- if .Values.defaultResources.dexConfig.enabled }}
+apiVersion: auth.stakater.com/v1alpha1
+kind: DexConfig
+metadata:
+  name: {{ .Values.defaultResources.dexConfig.name }}
+  labels:
+    {{- include "dex-config-operator.labels" . | nindent 4 }}
+spec:
+  issuer: {{ .Values.defaultResources.dexConfig.issuer }}
+  storage:
+    type: {{ .Values.defaultResources.dexConfig.storage.type }}
+    {{- if .Values.defaultResources.dexConfig.storage.config }}
+    config:
+      {{- toYaml .Values.defaultResources.dexConfig.storage.config | nindent 6 }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.storage.configSecretRef }}
+    configSecretRef:
+      name: {{ .Values.defaultResources.dexConfig.storage.configSecretRef.name }}
+      {{- if .Values.defaultResources.dexConfig.storage.configSecretRef.namespace }}
+      namespace: {{ .Values.defaultResources.dexConfig.storage.configSecretRef.namespace }}
+      {{- end }}
+      {{- if .Values.defaultResources.dexConfig.storage.configSecretRef.key }}
+      key: {{ .Values.defaultResources.dexConfig.storage.configSecretRef.key }}
+      {{- end }}
+    {{- end }}
+  {{- if .Values.defaultResources.dexConfig.web }}
+  web:
+    {{- if .Values.defaultResources.dexConfig.web.http }}
+    http: {{ .Values.defaultResources.dexConfig.web.http }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.web.https }}
+    https: {{ .Values.defaultResources.dexConfig.web.https }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.web.tlsCert }}
+    tlsCert: {{ .Values.defaultResources.dexConfig.web.tlsCert }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.web.tlsKey }}
+    tlsKey: {{ .Values.defaultResources.dexConfig.web.tlsKey }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.web.allowedOrigins }}
+    allowedOrigins:
+      {{- toYaml .Values.defaultResources.dexConfig.web.allowedOrigins | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.grpc }}
+  grpc:
+    {{- if .Values.defaultResources.dexConfig.grpc.addr }}
+    addr: {{ .Values.defaultResources.dexConfig.grpc.addr }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.grpc.tlsCert }}
+    tlsCert: {{ .Values.defaultResources.dexConfig.grpc.tlsCert }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.grpc.tlsKey }}
+    tlsKey: {{ .Values.defaultResources.dexConfig.grpc.tlsKey }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.grpc.tlsClientCA }}
+    tlsClientCA: {{ .Values.defaultResources.dexConfig.grpc.tlsClientCA }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.grpc.reflection }}
+    reflection: {{ .Values.defaultResources.dexConfig.grpc.reflection }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.telemetry }}
+  telemetry:
+    {{- if .Values.defaultResources.dexConfig.telemetry.http }}
+    http: {{ .Values.defaultResources.dexConfig.telemetry.http }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.oauth2 }}
+  oauth2:
+    {{- if hasKey .Values.defaultResources.dexConfig.oauth2 "skipApprovalScreen" }}
+    skipApprovalScreen: {{ .Values.defaultResources.dexConfig.oauth2.skipApprovalScreen }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.oauth2.alwaysShowLoginScreen }}
+    alwaysShowLoginScreen: {{ .Values.defaultResources.dexConfig.oauth2.alwaysShowLoginScreen }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.oauth2.passwordConnector }}
+    passwordConnector: {{ .Values.defaultResources.dexConfig.oauth2.passwordConnector }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.oauth2.responseTypes }}
+    responseTypes:
+      {{- toYaml .Values.defaultResources.dexConfig.oauth2.responseTypes | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.expiry }}
+  expiry:
+    {{- if .Values.defaultResources.dexConfig.expiry.signingKeys }}
+    signingKeys: {{ .Values.defaultResources.dexConfig.expiry.signingKeys | quote }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.expiry.idTokens }}
+    idTokens: {{ .Values.defaultResources.dexConfig.expiry.idTokens | quote }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.expiry.authRequests }}
+    authRequests: {{ .Values.defaultResources.dexConfig.expiry.authRequests | quote }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.expiry.deviceRequests }}
+    deviceRequests: {{ .Values.defaultResources.dexConfig.expiry.deviceRequests | quote }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.expiry.refreshTokens }}
+    refreshTokens:
+      {{- toYaml .Values.defaultResources.dexConfig.expiry.refreshTokens | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.logger }}
+  logger:
+    {{- if .Values.defaultResources.dexConfig.logger.level }}
+    level: {{ .Values.defaultResources.dexConfig.logger.level }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.logger.format }}
+    format: {{ .Values.defaultResources.dexConfig.logger.format }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.defaultResources.dexConfig.frontend }}
+  frontend:
+    {{- if .Values.defaultResources.dexConfig.frontend.issuer }}
+    issuer: {{ .Values.defaultResources.dexConfig.frontend.issuer }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.frontend.logoURL }}
+    logoURL: {{ .Values.defaultResources.dexConfig.frontend.logoURL }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.frontend.theme }}
+    theme: {{ .Values.defaultResources.dexConfig.frontend.theme }}
+    {{- end }}
+    {{- if .Values.defaultResources.dexConfig.frontend.dir }}
+    dir: {{ .Values.defaultResources.dexConfig.frontend.dir }}
+    {{- end }}
+  {{- end }}
+{{- end }}

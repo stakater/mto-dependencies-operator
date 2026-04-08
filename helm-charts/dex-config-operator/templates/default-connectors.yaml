@@ -1,0 +1,40 @@
+{{- range $index, $connector := .Values.defaultResources.connectors }}
+{{- if $connector.enabled }}
+---
+apiVersion: auth.stakater.com/v1alpha1
+kind: Connector
+metadata:
+  name: {{ $connector.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+spec:
+  type: {{ $connector.type }}
+  id: {{ $connector.id }}
+  name: {{ $connector.displayName | default $connector.name }}
+  configSecretRef:
+    name: {{ $connector.configSecretRef.name }}
+    {{- if $connector.configSecretRef.namespace }}
+    namespace: {{ $connector.configSecretRef.namespace }}
+    {{- end }}
+    {{- if $connector.configSecretRef.key }}
+    key: {{ $connector.configSecretRef.key }}
+    {{- end }}
+  {{- if hasKey $connector "specEnabled" }}
+  enabled: {{ $connector.specEnabled }}
+  {{- else }}
+  enabled: true
+  {{- end }}
+{{- if $connector.createSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $connector.configSecretRef.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+type: Opaque
+stringData:
+  {{ $connector.configSecretRef.key | default "config" }}: {{ $connector.secretData | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
