@@ -1,0 +1,348 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: dexconfigs.auth.stakater.com
+spec:
+  group: auth.stakater.com
+  names:
+    kind: DexConfig
+    listKind: DexConfigList
+    plural: dexconfigs
+    singular: dexconfig
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.issuer
+      name: Issuer
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DexConfig is the Schema for the dexconfigs API.
+          One DexConfig resource should exist per namespace where a Dex instance is running.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DexConfigSpec defines the desired state of DexConfig
+            properties:
+              enablePasswordDB:
+                description: Enable Static Users for password authentication
+                type: boolean
+              expiry:
+                description: Expiry configures token expiry settings
+                properties:
+                  authRequests:
+                    description: AuthRequests defines how long authorization requests
+                      are valid
+                    type: string
+                  deviceRequests:
+                    description: DeviceRequests defines how long device authorization
+                      requests are valid
+                    type: string
+                  idTokens:
+                    default: 24h
+                    description: IDTokens defines how long ID tokens are valid
+                    type: string
+                  refreshTokens:
+                    description: RefreshTokens defines the refresh token expiry configuration
+                    properties:
+                      absoluteLifetime:
+                        description: AbsoluteLifetime defines the absolute lifetime
+                          of a refresh token
+                        type: string
+                      disableRotation:
+                        description: DisableRotation disables refresh token rotation
+                        type: boolean
+                      reuseInterval:
+                        description: ReuseInterval defines the interval for which
+                          a refresh token can be reused
+                        type: string
+                      validIfNotUsedFor:
+                        description: ValidIfNotUsedFor defines how long a refresh
+                          token is valid if not used
+                        type: string
+                    type: object
+                  signingKeys:
+                    default: 6h
+                    description: SigningKeys defines how long signing keys are valid
+                    type: string
+                type: object
+              frontend:
+                description: Frontend configures the web UI appearance
+                properties:
+                  dir:
+                    description: Dir is the directory path to serve static assets
+                      from
+                    type: string
+                  issuer:
+                    description: Issuer is the name of the issuer to display
+                    type: string
+                  logoURL:
+                    description: LogoURL is the URL to a logo to display
+                    type: string
+                  theme:
+                    description: Theme specifies the CSS theme (light, dark, auto)
+                    type: string
+                type: object
+              grpc:
+                description: GRPC configures the gRPC API server
+                properties:
+                  addr:
+                    description: Addr is the gRPC server address
+                    type: string
+                  reflection:
+                    description: Reflection enables gRPC server reflection
+                    type: boolean
+                  tlsCert:
+                    description: TLSCert path to the TLS certificate file
+                    type: string
+                  tlsClientCA:
+                    description: TLSClientCA path to the TLS client CA file
+                    type: string
+                  tlsKey:
+                    description: TLSKey path to the TLS private key file
+                    type: string
+                type: object
+              issuer:
+                description: |-
+                  Issuer is the base path of dex and the external name of the OpenID Connect service
+                  This is the canonical URL that all clients MUST use to refer to dex.
+                pattern: ^https?://.*
+                type: string
+              logger:
+                description: Logger configures the logging behavior
+                properties:
+                  format:
+                    default: text
+                    description: Format sets the log format (text, json)
+                    enum:
+                    - text
+                    - json
+                    type: string
+                  level:
+                    default: info
+                    description: Level sets the logging level (debug, info, error)
+                    enum:
+                    - debug
+                    - info
+                    - error
+                    type: string
+                type: object
+              oauth2:
+                description: OAuth2 configures OAuth2-specific behavior
+                properties:
+                  alwaysShowLoginScreen:
+                    description: AlwaysShowLoginScreen forces the login screen to
+                      be shown
+                    type: boolean
+                  passwordConnector:
+                    description: PasswordConnector specifies which connector to use
+                      for password grants
+                    type: string
+                  responseTypes:
+                    description: ResponseTypes specifies which OAuth2 response types
+                      to enable
+                    items:
+                      type: string
+                    type: array
+                  skipApprovalScreen:
+                    default: false
+                    description: SkipApprovalScreen skips the approval screen when
+                      true
+                    type: boolean
+                type: object
+              storage:
+                description: Storage configures the storage backend for Dex
+                properties:
+                  config:
+                    description: |-
+                      Config contains the storage-specific configuration as a raw JSON object
+                      For kubernetes: {"inCluster": true}
+                      For postgres: {"host": "localhost", "port": 5432, "database": "dex", "user": "dex", "password": "secret", "ssl": {"mode": "disable"}}
+                      Use this for simple configurations or when passwords are not involved.
+                      For sensitive data (like database passwords), use ConfigSecretRef instead.
+                    x-kubernetes-preserve-unknown-fields: true
+                  configSecretRef:
+                    description: |-
+                      ConfigSecretRef references a secret containing database credentials
+                      This is recommended for database backends (postgres, mysql) that require passwords.
+                      The secret should contain individual keys for database connection parameters:
+                      For Postgres: POSTGRESQL_DATABASE, POSTGRESQL_PASSWORD, POSTGRESQL_PORT, POSTGRESQL_USER, POSTGRESQL_SERVICE, POSTGRESQL_SSL
+                      For MySQL: MYSQL_DATABASE, MYSQL_PASSWORD, MYSQL_PORT, MYSQL_USER, MYSQL_SERVICE, MYSQL_SSL
+                      This takes precedence over the inline Config field if both are specified.
+                    properties:
+                      key:
+                        description: |-
+                          Key within the secret that contains the data. If empty, defaults to "config"
+                          The data should be base64-encoded JSON that will be unmarshaled
+                        type: string
+                      name:
+                        description: Name of the secret
+                        type: string
+                      namespace:
+                        description: Namespace of the secret. If empty, defaults to
+                          the namespace of the CR
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type:
+                    default: kubernetes
+                    description: Type specifies the storage backend type (kubernetes,
+                      postgres, mysql, etc.)
+                    enum:
+                    - kubernetes
+                    - postgres
+                    - mysql
+                    - sqlite3
+                    - memory
+                    type: string
+                required:
+                - type
+                type: object
+              telemetry:
+                description: Telemetry configures the telemetry server for metrics
+                properties:
+                  http:
+                    description: HTTP address to listen on for telemetry and metrics
+                    type: string
+                type: object
+              web:
+                description: Web configures the HTTP/HTTPS server
+                properties:
+                  allowedOrigins:
+                    description: AllowedOrigins list of allowed CORS origins
+                    items:
+                      type: string
+                    type: array
+                  http:
+                    description: HTTP address to listen on for HTTP requests
+                    type: string
+                  https:
+                    description: HTTPS address to listen on for HTTPS requests
+                    type: string
+                  tlsCert:
+                    description: TLSCert path to the TLS certificate file
+                    type: string
+                  tlsKey:
+                    description: TLSKey path to the TLS private key file
+                    type: string
+                type: object
+            required:
+            - issuer
+            - storage
+            type: object
+          status:
+            description: DexConfigStatus defines the observed state of DexConfig
+            properties:
+              appliedConfiguration:
+                description: AppliedConfiguration indicates whether this config has
+                  been applied
+                type: boolean
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the DexConfig's current state
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              lastUpdated:
+                description: LastUpdated is the timestamp when the DexConfig status
+                  was last updated
+                format: date-time
+                type: string
+              message:
+                description: Message provides human-readable details about the current
+                  state
+                type: string
+              observedGeneration:
+                description: ObservedGeneration reflects the generation of the most
+                  recently observed DexConfig
+                format: int64
+                type: integer
+              phase:
+                description: Phase represents the current phase of the DexConfig
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+

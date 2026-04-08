@@ -1,0 +1,10 @@
+## Append samples of your project ##
+resources:
+- dependencies_v1alpha1_dex.yaml
+- dependencies_v1alpha1_postgres.yaml
+- dependencies_v1alpha1_prometheus.yaml
+- dependencies_v1alpha1_kubestatemetrics.yaml
+- dependencies_v1alpha1_opencost.yaml
+- dependencies_v1alpha1_dexconfigoperator.yaml
+- dependencies_v1alpha1_finopsoperator.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

@@ -1,0 +1,30 @@
+# Use the 'create api' subcommand to add watches to this file.
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: Dex
+  chart: helm-charts/dex
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: Postgres
+  chart: helm-charts/postgresql
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: Prometheus
+  chart: helm-charts/prometheus
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: KubeStateMetrics
+  chart: helm-charts/kube-state-metrics
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: OpenCost
+  chart: helm-charts/opencost
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: DexConfigOperator
+  chart: helm-charts/dex-config-operator
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: FinOpsOperator
+  chart: helm-charts/finops-operator
+# +kubebuilder:scaffold:watch

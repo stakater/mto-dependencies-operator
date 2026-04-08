@@ -1,0 +1,1387 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+    control-plane: controller-manager
+  name: mto-dependencies-operator-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dexconfigoperators.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: DexConfigOperator
+    listKind: DexConfigOperatorList
+    plural: dexconfigoperators
+    singular: dexconfigoperator
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DexConfigOperator is the Schema for the dexconfigoperators API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of DexConfigOperator
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of DexConfigOperator
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dexes.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: Dex
+    listKind: DexList
+    plural: dexes
+    singular: dex
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Dex is the Schema for the dexes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of Dex
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of Dex
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: finopsoperators.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: FinOpsOperator
+    listKind: FinOpsOperatorList
+    plural: finopsoperators
+    singular: finopsoperator
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: FinOpsOperator is the Schema for the finopsoperators API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of FinOpsOperator
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of FinOpsOperator
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: kubestatemetrics.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: KubeStateMetrics
+    listKind: KubeStateMetricsList
+    plural: kubestatemetrics
+    singular: kubestatemetrics
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: KubeStateMetrics is the Schema for the kubestatemetrics API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of KubeStateMetrics
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of KubeStateMetrics
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: opencosts.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: OpenCost
+    listKind: OpenCostList
+    plural: opencosts
+    singular: opencost
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OpenCost is the Schema for the opencosts API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of OpenCost
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of OpenCost
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: postgres.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: Postgres
+    listKind: PostgresList
+    plural: postgres
+    singular: postgres
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Postgres is the Schema for the postgres API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of Postgres
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of Postgres
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: prometheuses.dependencies.tenantoperator.stakater.com
+spec:
+  group: dependencies.tenantoperator.stakater.com
+  names:
+    kind: Prometheus
+    listKind: PrometheusList
+    plural: prometheuses
+    singular: prometheus
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Prometheus is the Schema for the prometheuses API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of Prometheus
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of Prometheus
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-controller-manager
+  namespace: mto-dependencies-operator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-leader-election-role
+  namespace: mto-dependencies-operator-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dex-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dex-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dex-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dexconfigoperator-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dexconfigoperator-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-dexconfigoperator-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-finopsoperator-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-finopsoperator-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-finopsoperator-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-kubestatemetrics-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-kubestatemetrics-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-kubestatemetrics-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mto-dependencies-operator-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexes
+  - dexes/status
+  - dexes/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres
+  - postgres/status
+  - postgres/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - '*'
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses
+  - prometheuses/status
+  - prometheuses/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - persistentvolumeclaims
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - kubestatemetrics
+  - kubestatemetrics/status
+  - kubestatemetrics/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts
+  - opencosts/status
+  - opencosts/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - dexconfigoperators
+  - dexconfigoperators/status
+  - dexconfigoperators/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - services/finalizers
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsoperators
+  - finopsoperators/status
+  - finopsoperators/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - costjobs
+  - costjobs/status
+  - costjobs/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - finopsproviders
+  - finopsproviders/status
+  - finopsproviders/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - pricebooks
+  - pricebooks/status
+  - pricebooks/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mto-dependencies-operator-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mto-dependencies-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-opencost-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-opencost-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-opencost-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - opencosts/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-postgres-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-postgres-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-postgres-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-prometheus-admin-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses
+  verbs:
+  - '*'
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-prometheus-editor-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-prometheus-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - prometheuses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-leader-election-rolebinding
+  namespace: mto-dependencies-operator-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mto-dependencies-operator-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: mto-dependencies-operator-controller-manager
+  namespace: mto-dependencies-operator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+  name: mto-dependencies-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mto-dependencies-operator-manager-role
+subjects:
+- kind: ServiceAccount
+  name: mto-dependencies-operator-controller-manager
+  namespace: mto-dependencies-operator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mto-dependencies-operator-metrics-auth-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mto-dependencies-operator-metrics-auth-role
+subjects:
+- kind: ServiceAccount
+  name: mto-dependencies-operator-controller-manager
+  namespace: mto-dependencies-operator-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+    control-plane: controller-manager
+  name: mto-dependencies-operator-metrics
+  namespace: mto-dependencies-operator-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app.kubernetes.io/name: mto-dependencies-operator
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mto-dependencies-operator
+    control-plane: controller-manager
+  name: mto-dependencies-operator-controller-manager
+  namespace: mto-dependencies-operator-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mto-dependencies-operator
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: mto-dependencies-operator
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --metrics-require-rbac
+        - --metrics-secure
+        - --metrics-bind-address=:8443
+        - --leader-elect
+        - --leader-election-id=mto-dependencies-operator
+        - --health-probe-bind-address=:8081
+        image: ghcr.io/stakater/mto-dependencies-operator:v0.0.2
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports: []
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts: []
+      imagePullSecrets:
+      - name: saap-dockerconfigjson
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: mto-dependencies-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes: []

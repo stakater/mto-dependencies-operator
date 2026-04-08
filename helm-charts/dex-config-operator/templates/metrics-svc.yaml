@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dex-config-operator.fullname" . }}-controller-manager-metrics-svc
+  labels:
+    control-plane: controller-manager
+  {{- include "dex-config-operator.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.metricsSvc.type }}
+  selector:
+    app.kubernetes.io/name: dex-config-operator
+    control-plane: controller-manager
+    {{- include "dex-config-operator.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.metricsSvc.ports | toYaml | nindent 2 }}

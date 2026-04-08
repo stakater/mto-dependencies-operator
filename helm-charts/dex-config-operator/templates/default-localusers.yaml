@@ -1,0 +1,51 @@
+{{- range $index, $user := .Values.defaultResources.localUsers }}
+{{- if $user.enabled }}
+---
+apiVersion: auth.stakater.com/v1alpha1
+kind: LocalUser
+metadata:
+  name: {{ $user.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+spec:
+  userID: {{ $user.userID | quote }}
+  credentialSecretRef:
+    name: {{ $user.credentialSecretRef.name }}
+    {{- if $user.credentialSecretRef.namespace }}
+    namespace: {{ $user.credentialSecretRef.namespace }}
+    {{- end }}
+    {{- if $user.credentialSecretRef.key }}
+    key: {{ $user.credentialSecretRef.key }}
+    {{- end }}
+  {{- if hasKey $user "specEnabled" }}
+  enabled: {{ $user.specEnabled }}
+  {{- else }}
+  enabled: true
+  {{- end }}
+{{- if $user.createSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $user.credentialSecretRef.name }}
+  labels:
+    {{- include "dex-config-operator.labels" $ | nindent 4 }}
+type: Opaque
+stringData:
+  {{- if $user.credentialSecretRef.key }}
+  {{ $user.credentialSecretRef.key }}: |
+    {
+      "username": {{ $user.secretData.username | quote }},
+      "email": {{ $user.secretData.email | quote }},
+      "password": {{ $user.secretData.password | quote }},
+      "groups": {{ $user.secretData.groups | toJson }}
+    }
+  {{- else }}
+  username: {{ $user.secretData.username | quote }}
+  email: {{ $user.secretData.email | quote }}
+  password: {{ $user.secretData.password | quote }}
+  groups: {{ $user.secretData.groups | toJson }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

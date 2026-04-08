@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finops-operator-controller-manager
+  labels:
+    control-plane: controller-manager
+  {{- include "finops-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controllerManager.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: finops-operator
+      control-plane: controller-manager
+    {{- include "finops-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: finops-operator
+        control-plane: controller-manager
+      {{- include "finops-operator.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
+        command:
+        - /manager
+        env:
+        - name: PROMETHEUS_URL
+          valueFrom:
+            secretKeyRef:
+              key: PROMETHEUS_URL
+              name: {{ .Values.secrets.prometheus }}
+        - name: POSTGRES_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_CONNECTION_STRING
+              name: {{ .Values.secrets.postgres }}
+        - name: OPENCOST_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              key: OPENCOST_CONNECTION_STRING
+              name: {{ .Values.secrets.opencost }}
+        - name: OPENCOST_DEPLOYMENT_NAME
+          value: {{ quote .Values.controllerManager.manager.env.opencostDeploymentName
+            }}
+        - name: OPENCOST_DEPLOYMENT_NAMESPACE
+          value: {{ quote .Values.controllerManager.manager.env.opencostDeploymentNamespace
+            }}
+        - name: MTO_ENABLED
+          value: {{ quote .Values.controllerManager.manager.env.mtoEnabled }}
+        - name: IMAGE_PULL_SECRETS
+          value: {{ .Values.imagePullSecrets | default list | toJson | quote }}
+        - name: OPERATOR_IMAGE
+          value: "{{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag | default .Chart.AppVersion }}"
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
+          | default .Chart.AppVersion }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {}
+        securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
+          | nindent 10 }}
+      imagePullSecrets: {{ .Values.imagePullSecrets | default list | toJson }}
+      securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
+        8 }}
+      serviceAccountName: finops-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finops-operator-finops-gateway-gateway
+  labels:
+    app: finops-gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: finops-operator
+    version: v1
+  {{- include "finops-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.finopsGatewayGateway.replicas }}
+  selector:
+    matchLabels:
+      app: gateway
+    {{- include "finops-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: gateway
+      {{- include "finops-operator.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: PG_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              key: POSTGRES_CONNECTION_STRING
+              name: {{ .Values.secrets.postgres }}
+        - name: PORT
+          value: {{ quote .Values.finopsGatewayGateway.finopsGatewayContainer.env.port
+            }}
+        - name: ENABLE_AUTH
+          value: {{ quote .Values.finopsGatewayGateway.finopsGatewayContainer.env.enableAuth
+            }}
+        - name: MTO_GATEWAY_URL
+          value: {{ quote .Values.finopsGatewayGateway.finopsGatewayContainer.env.mtoGatewayUrl
+            }}
+        - name: ALLOWED_ORIGINS
+          value: {{ quote .Values.finopsGatewayGateway.finopsGatewayContainer.env.allowedOrigins
+            }}
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: '{{ .Values.finopsGatewayGateway.finopsGatewayContainer.image.repository
+          }}:{{ .Values.finopsGatewayGateway.finopsGatewayContainer.image.tag | default
+          .Chart.AppVersion }}'
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: finops-gateway-container
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /liveprobe
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources: {}
+        securityContext: {{- toYaml .Values.finopsGatewayGateway.finopsGatewayContainer.containerSecurityContext
+          | nindent 10 }}
+      imagePullSecrets: {{ .Values.imagePullSecrets | default list | toJson }}
+      securityContext: {}

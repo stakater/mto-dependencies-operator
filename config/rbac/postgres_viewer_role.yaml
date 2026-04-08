@@ -1,0 +1,29 @@
+# This rule is not used by the project mto-dependencies-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to dependencies.tenantoperator.stakater.com resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: mto-dependencies-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: postgres-viewer-role
+rules:
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dependencies.tenantoperator.stakater.com
+  resources:
+  - postgres/status
+  verbs:
+  - get

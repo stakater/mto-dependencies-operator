@@ -1,0 +1,105 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: Dex
+metadata:
+  name: dex-sample
+spec:
+  # Default values copied from <project_dir>/helm-charts/dex/values.yaml
+  affinity: {}
+  autoscaling:
+    enabled: false
+    maxReplicas: 100
+    minReplicas: 1
+    targetCPUUtilizationPercentage: 80
+  commonLabels: {}
+  config: {}
+  configSecret:
+    create: true
+    name: ""
+  deploymentAnnotations: {}
+  deploymentLabels: {}
+  env: {}
+  envFrom: []
+  envVars: []
+  fullnameOverride: ""
+  grpc:
+    enabled: false
+  hostAliases: []
+  https:
+    enabled: false
+  image:
+    digest: ""
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/dexidp/dex
+    tag: ""
+  imagePullSecrets: []
+  ingress:
+    annotations: {}
+    className: ""
+    enabled: false
+    hosts:
+    - host: chart-example.local
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+    tls: []
+  nameOverride: ""
+  namespaceOverride: ""
+  networkPolicy:
+    egressRules: []
+    enabled: false
+  nodeSelector: {}
+  podAnnotations: {}
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: null
+    minAvailable: null
+  podLabels: {}
+  podSecurityContext: {}
+  priorityClassName: ""
+  rbac:
+    create: true
+    createClusterScoped: true
+  replicaCount: 1
+  resources: {}
+  revisionHistoryLimit: 10
+  securityContext: {}
+  service:
+    annotations: {}
+    clusterIP: ""
+    loadBalancerIP: ""
+    ports:
+      grpc:
+        nodePort: null
+        port: 5557
+      http:
+        nodePort: null
+        port: 5556
+      https:
+        nodePort: null
+        port: 5554
+    type: ClusterIP
+  serviceAccount:
+    annotations: {}
+    create: true
+    name: ""
+  serviceMonitor:
+    annotations: {}
+    bearerTokenFile: null
+    enabled: false
+    honorLabels: false
+    interval: null
+    labels: {}
+    metricRelabelings: []
+    namespace: ""
+    path: /metrics
+    relabelings: []
+    scheme: ""
+    scrapeTimeout: null
+    tlsConfig: {}
+  strategy: {}
+  tolerations: []
+  topologySpreadConstraints: []
+  volumeMounts: []
+  volumes: []
+  
+  

@@ -1,0 +1,82 @@
+name: Manual Release
+
+on:
+  push:
+    tags:
+      # restricting it to only Major Versions 0,1,2
+      - 'v[012].[0-9]+.[0-9]+'
+      - '!v[012].[0-9]+.[0-9]+-*'
+
+jobs:
+  operator-release:
+    name: Operator Release
+    uses: stakater/.github/.github/workflows/operator_release.yaml@main
+    secrets:
+      CONTAINER_REGISTRY_URL: ghcr.io/stakater
+      CONTAINER_REGISTRY_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
+      STAKATER_AB_REPOS: ${{ secrets.STAKATER_AB_REPOS }}
+    with:
+      ENABLE_LINTING: true
+      ENABLE_UNIT_TESTS: true
+      ENABLE_STAKATER_AB_GIT_AUTH: true
+      ENABLE_CHART_PUSH: true
+
+  publish-mdo-to-operator-hub:
+    name: publish-mdo-to-operator-hub
+    uses: stakater/.github/.github/workflows/publish_operator_image_and_bundle.yaml@main
+    needs: operator-release
+    secrets:
+      REGISTRY_REDHAT_IO_PULL_SECRET: ${{ secrets.REGISTRY_REDHAT_IO_PULL_SECRET }}
+      STAKATER_NEXUS_REGISTRY: ghcr.io/stakater
+      STAKATER_NEXUS_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      STAKATER_NEXUS_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+      OPERATORHUB_USERNAME: ${{ secrets.OPERATORHUB_USERNAME }}
+      OPERATORHUB_PASSWORD: ${{ secrets.OPERATORHUB_PASSWORD }}
+      OPERATORHUB_REPOSITORY: ${{ secrets.OPERATORHUB_REPOSITORY }}
+      PYXIS_API_TOKEN: ${{ secrets.PYXIS_API_TOKEN }}
+      ADMIN_TOKEN: ${{ secrets.STAKATER_AB_REPOS }}
+      PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+      STAKATER_DELIVERY_SLACK_WEBHOOK: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
+    with:
+      GOLANG_VERSION: 1.25.0
+      OPERATOR_SDK_VERSION: "v1.41.1"
+      CERTIFICATION_PROJECT_ID: ospid-691f1b060ed6bd4d5dda987c
+      OPERATOR_BUNDLE_ID: 691f1b4aca91674101ca7b62
+      DOCKER_FILE_PATH: Dockerfile
+      PUBLISH_BUNDLE: true
+      SUBPATH: .
+      PREFLIGHT_VERSION: v1.14.1
+
+  notify-success:
+    name: Notify Success
+    runs-on: ubuntu-latest
+    if: always() && (needs.publish-mdo-to-operator-hub.result == 'success')
+    needs: publish-mdo-to-operator-hub
+    steps:
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3.16.2
+        if: always()
+        with:
+          status: success
+          fields: repo,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
+
+  notify-failure:
+    name: Notify Failure
+    runs-on: ubuntu-latest
+    if: always() && (needs.publish-mdo-to-operator-hub.result != 'success')
+    needs: publish-mdo-to-operator-hub
+
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3.16.2
+      if: always()
+      with:
+        status: failure
+        fields: repo,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
+

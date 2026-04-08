@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: finops-operator-pricebook-admin-role
+  labels:
+  {{- include "finops-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - pricebooks
+  verbs:
+  - '*'
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - pricebooks/status
+  verbs:
+  - get

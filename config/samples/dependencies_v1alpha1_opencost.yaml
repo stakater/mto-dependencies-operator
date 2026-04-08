@@ -1,0 +1,305 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: OpenCost
+metadata:
+  name: opencost-sample
+spec:
+  # Default values copied from <project_dir>/helm-charts/opencost/values.yaml
+  annotations: {}
+  clusterName: cluster.local
+  extraVolumes: []
+  fullnameOverride: ""
+  imagePullSecrets: []
+  loglevel: info
+  nameOverride: ""
+  namespaceOverride: ""
+  networkPolicies:
+    enabled: false
+    extraEgress: []
+    prometheus:
+      labels:
+        app.kubernetes.io/name: prometheus
+      namespace: prometheus-system
+      port: 9090
+  opencost:
+    affinity: {}
+    carbonCost:
+      enabled: false
+    cloudCost:
+      enabled: false
+      monthToDateInterval: 6
+      queryWindowDays: 7
+      refreshRateHours: 6
+      runWindowDays: 3
+    cloudIntegrationSecret: ""
+    customPricing:
+      configPath: /tmp/custom-config
+      configmapName: custom-pricing-model
+      costModel:
+        CPU: 1.25
+        GPU: 0.95
+        RAM: 0.5
+        description: Modified pricing configuration.
+        internetNetworkEgress: 0.12
+        regionNetworkEgress: 0.01
+        spotCPU: 0.006655
+        spotRAM: 0.000892
+        storage: 0.25
+        zoneNetworkEgress: 0.01
+      createConfigmap: true
+      enabled: false
+      provider: custom
+    exporter:
+      apiIngress:
+        annotations: {}
+        enabled: false
+        hosts:
+        - host: example.local
+          paths:
+          - path: /
+            pathType: Prefix
+        ingressClassName: ""
+        servicePort: http
+        tls: []
+      apiPort: 9003
+      aws:
+        access_key_id: ""
+        secret_access_key: ""
+      cloudProviderApiKey: ""
+      collectorDataSource:
+        enabled: false
+        networkPort: 3001
+        retention10m: 36
+        retention1d: 15
+        retention1h: 49
+        scrapeInterval: 30s
+      command: []
+      csv_path: ""
+      defaultClusterId: default-cluster
+      env: []
+      extraArgs: []
+      extraEnv: {}
+      extraVolumeMounts: []
+      image:
+        fullImageName: null
+        pullPolicy: IfNotPresent
+        registry: ghcr.io
+        repository: opencost/opencost
+        tag: 1.117.3@sha256:09fae89c4544ec2a891e2902e88ce3137d7032c6edbe0fd97441aaee7bdbea54
+      livenessProbe:
+        enabled: true
+        failureThreshold: 3
+        initialDelaySeconds: 10
+        path: /healthz
+        periodSeconds: 20
+      persistence:
+        accessMode: ""
+        annotations: {}
+        enabled: false
+        mountPath: /mnt/export
+        size: ""
+        storageClass: ""
+      prometheusDataSource:
+        queryResolutionSeconds: 300
+      readinessProbe:
+        enabled: true
+        failureThreshold: 3
+        initialDelaySeconds: 10
+        path: /healthz
+        periodSeconds: 10
+      replicas: 1
+      resources:
+        limits:
+          memory: 1Gi
+        requests:
+          cpu: 10m
+          memory: 55Mi
+      securityContext: {}
+      startupProbe:
+        enabled: true
+        failureThreshold: 30
+        initialDelaySeconds: 10
+        path: /healthz
+        periodSeconds: 5
+    extraContainers: []
+    metrics:
+      config:
+        configmapName: custom-metrics
+        disabledMetrics: []
+        enabled: false
+      kubeStateMetrics:
+        emitKsmV1Metrics: null
+        emitKsmV1MetricsOnly: null
+        emitNamespaceAnnotations: null
+        emitPodAnnotations: null
+      serviceMonitor:
+        additionalLabels: {}
+        enabled: false
+        extraEndpoints: []
+        honorLabels: true
+        metricRelabelings: []
+        namespace: ""
+        relabelings: []
+        scheme: http
+        scrapeInterval: 30s
+        scrapeTimeout: 10s
+        tlsConfig: {}
+    nodeSelector: {}
+    platforms:
+      openshift:
+        createMonitoringClusterRoleBinding: false
+        createMonitoringResourceReaderRoleBinding: false
+        enablePromAccess: false
+        enableSCC: false
+        enabled: false
+        monitoringServiceAccountName: prometheus-k8s
+        monitoringServiceAccountNamespace: openshift-monitoring
+    prometheus:
+      amp:
+        enabled: false
+        workspaceId: ""
+      bearer_token: ""
+      bearer_token_key: DB_BEARER_TOKEN
+      existingSecretName: null
+      external:
+        enabled: false
+        url: https://prometheus.example.com/prometheus
+      insecureSkipVerify: false
+      internal:
+        enabled: true
+        namespaceName: prometheus-system
+        path: ""
+        port: 80
+        scheme: http
+        serviceName: prometheus-server
+      kubeRBACProxy: false
+      password: ""
+      password_key: DB_BASIC_AUTH_PW
+      secret_name: null
+      thanos:
+        enabled: false
+        external:
+          enabled: false
+          url: https://thanos-query.example.com/thanos
+        internal:
+          enabled: true
+          namespaceName: opencost
+          port: 10901
+          scheme: http
+          serviceName: my-thanos-query
+        maxSourceResolution: ""
+        queryOffset: ""
+      username: ""
+      username_key: DB_BASIC_AUTH_USERNAME
+    retention1d: 15
+    retention1h: 49
+    sigV4Proxy:
+      extraEnv: null
+      host: aps-workspaces.us-west-2.amazonaws.com
+      image: public.ecr.aws/aws-observability/aws-sigv4-proxy:latest
+      imagePullPolicy: IfNotPresent
+      name: aps
+      port: 8005
+      region: us-west-2
+      resources: {}
+      securityContext: {}
+    tolerations: []
+    topologySpreadConstraints: []
+    ui:
+      enabled: true
+      extraEnv: []
+      extraVolumeMounts: []
+      image:
+        fullImageName: null
+        pullPolicy: IfNotPresent
+        registry: ghcr.io
+        repository: opencost/opencost-ui
+        tag: 1.117.3@sha256:727b95405e8c749ddbaa3bd97b93d9c0e246faeb9be9d370dd93ae6b31cdb0c2
+      ingress:
+        annotations: {}
+        enabled: false
+        hosts:
+        - host: example.local
+          paths:
+          - /
+        ingressClassName: ""
+        servicePort: http-ui
+        tls: []
+      livenessProbe:
+        enabled: true
+        failureThreshold: 3
+        initialDelaySeconds: 30
+        path: /healthz
+        periodSeconds: 10
+      readinessProbe:
+        enabled: true
+        failureThreshold: 3
+        initialDelaySeconds: 30
+        path: /healthz
+        periodSeconds: 10
+      resources:
+        limits:
+          memory: 1Gi
+        requests:
+          cpu: 10m
+          memory: 55Mi
+      route:
+        annotations: {}
+        enabled: false
+        host: example.local
+        path: null
+        targetPort: http-ui
+        tls: []
+      securityContext: {}
+      uiPath: /
+      uiPort: 9090
+      useDefaultFqdn: false
+      useIPv6: true
+  pdb:
+    enabled: false
+    maxUnavailable: null
+    minAvailable: null
+  plugins:
+    configs: null
+    enabled: false
+    folder: /opt/opencost/plugin
+    install:
+      enabled: true
+      fullImageName: curlimages/curl:latest
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+  podAnnotations: {}
+  podAutomountServiceAccountToken: true
+  podLabels: {}
+  podSecurityContext: {}
+  priorityClassName: null
+  rbac:
+    enabled: true
+  secretAnnotations: {}
+  service:
+    annotations: {}
+    enabled: true
+    extraPorts: []
+    labels: {}
+    loadBalancerSourceRanges: []
+    nodePort: {}
+    type: ClusterIP
+  serviceAccount:
+    annotations: {}
+    automountServiceAccountToken: true
+    create: true
+    name: ""
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  
+  

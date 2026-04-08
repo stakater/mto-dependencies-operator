@@ -1,0 +1,67 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: FinOpsOperator
+metadata:
+  name: finopsoperator-sample
+spec:
+  controllerManager:
+    manager:
+      args:
+        - --metrics-bind-address=:8443
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      env:
+        opencostDeploymentName: finops-operator-opencost
+        opencostDeploymentNamespace: finops-operator-system
+        operatorImage: ghcr.io/stakater/finops-operator:v0.1.14
+      image:
+        repository: ghcr.io/stakater/finops-operator
+        tag: v0.1.14
+    podSecurityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    replicas: 1
+    serviceAccount:
+      annotations: {}
+  finops-gateway:
+    finopsGatewayContainer:
+      env:
+        enableAuth: "true"
+        mtoGatewayUrl: https://mto-zain-gateway.apps.xy1462m7s.stakater.cloud
+        port: "8080"
+    gateway:
+      finopsGatewayContainer:
+        containerSecurityContext: {}
+        env:
+          enableAuth: "false"
+          mtoGatewayUrl: ""
+          port: "8080"
+        image:
+          repository: ghcr.io/stakater/finops-gateway
+          tag: v0.1.12
+      nodeSelector: {}
+      replicas: 1
+      tolerations: []
+      topologySpreadConstraints: []
+    global: {}
+    imagePullSecrets: []
+    kubernetesClusterDomain: cluster.local
+    service:
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+      type: ClusterIP
+  kubernetesClusterDomain: cluster.local
+  metricsService:
+    ports:
+      - name: https
+        port: 8443
+        protocol: TCP
+        targetPort: 8443
+    type: ClusterIP

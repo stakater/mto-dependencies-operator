@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "dex-config-operator.fullname" . }}-connector-viewer-role
+  labels:
+  {{- include "dex-config-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - auth.stakater.com
+  resources:
+  - connectors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - auth.stakater.com
+  resources:
+  - connectors/status
+  verbs:
+  - get
