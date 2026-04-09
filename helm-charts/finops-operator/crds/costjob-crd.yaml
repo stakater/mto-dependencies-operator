@@ -87,6 +87,13 @@ spec:
                 description: StatusUpdateTimeout is the timeout for status update
                   operations
                 type: string
+              type:
+                default: ResourceCostCollection
+                description: Type of the cost collection job, e.g., "ResourceCostCollection"
+                enum:
+                - ResourceCostCollection
+                - SubscriptionChargeCollection
+                type: string
             required:
             - interval
             type: object

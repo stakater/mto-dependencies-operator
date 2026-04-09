@@ -1,0 +1,54 @@
+{{- if .Values.mdoDependencies.enabled }}
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: OpenCost
+metadata:
+  name: {{ .Release.Name }}-opencost
+  namespace: {{ .Release.Namespace }}
+spec:
+  imagePullPolicy: IfNotPresent
+  opencost:
+    cloudIntegrationSecret: ""
+    cloudCost:
+      enabled: false
+      refreshRateHours: 6
+      runWindowDays: 3
+      monthToDateInterval: 6
+      queryWindowDays: 7
+    customPricing:
+      enabled: true
+      configmapName: {{ .Release.Name }}-custom-pricing-configs
+      createConfigmap: false
+      provider: default
+    exporter:
+      resources: {}
+      persistence:
+        enabled: false
+      cloudProviderApiKey: ""
+      defaultClusterId: "default-cluster"
+      extraEnv:
+        PRICING_CONFIGMAP_NAME: {{ .Release.Name }}-custom-pricing-configs
+    ui:
+      enabled: false
+      resources: {}
+    prometheus:
+      internal:
+        enabled: false
+      external:
+        enabled: true
+        url: "http://{{ .Release.Name }}-prometheus-server.{{ .Release.Namespace }}.svc.cluster.local"
+    metrics:
+      kubeStateMetrics:
+        emitPodAnnotations: true
+        emitNamespaceAnnotations: true
+        emitKsmV1Metrics: true
+        emitKsmV1MetricsOnly: false
+      config:
+        enabled: false
+  service:
+    type: ClusterIP
+    port: 9003
+  serviceMonitor:
+    enabled: false
+  ingress:
+    enabled: false
+{{- end }}

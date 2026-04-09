@@ -1,0 +1,24 @@
+{{- if .Values.mdoDependencies.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-custom-pricing-configs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: finops-operator
+data:
+  default.json: |
+    {
+      "CPU": "0.031611",
+      "GPU": "0.95",
+      "RAM": "0.004237",
+      "description": "Default pricing - update via PriceBook CR",
+      "internetNetworkEgress": "0.01",
+      "regionNetworkEgress": "0.01",
+      "spotCPU": "0.012644",
+      "spotRAM": "0.001695",
+      "storage": "0.00005479452",
+      "zoneNetworkEgress": "0.01",
+      "provider": "custom"
+    }
+{{- end }}

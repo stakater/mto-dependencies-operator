@@ -56,7 +56,9 @@ rules:
   resources:
   - costjobs
   - finopsproviders
+  - offerings
   - pricebooks
+  - subscriptions
   verbs:
   - create
   - delete
@@ -69,7 +71,9 @@ rules:
   - finops.stakater.com
   resources:
   - costjobs/finalizers
+  - offerings/finalizers
   - pricebooks/finalizers
+  - subscriptions/finalizers
   verbs:
   - update
 - apiGroups:
@@ -77,7 +81,9 @@ rules:
   resources:
   - costjobs/status
   - finopsproviders/status
+  - offerings/status
   - pricebooks/status
+  - subscriptions/status
   verbs:
   - get
   - patch

@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "finops-operator.fullname" . }}-serving-cert
+  labels:
+  {{- include "finops-operator.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "finops-operator.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc'
+  - '{{ include "finops-operator.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc.{{ .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: finops-operator-selfsigned-issuer
+  secretName: webhook-server-cert

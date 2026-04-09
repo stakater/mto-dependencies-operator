@@ -4,6 +4,7 @@ controllerManager:
       - --metrics-bind-address=:8443
       - --leader-elect
       - --health-probe-bind-address=:8081
+      - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -14,8 +15,8 @@ controllerManager:
       opencostDeploymentName: finops-operator-opencost
       opencostDeploymentNamespace: finops-operator-system
     image:
-      repository: ghcr.io/stakater/finops-operator
-      tag: v0.1.16
+      repository: ghcr.io/stakater/public/finops-operator
+      tag: v0.1.1
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
@@ -33,7 +34,7 @@ finopsGatewayGateway:
       port: "8080"
     image:
       repository: ghcr.io/stakater/finops-gateway
-      tag: v0.0.1-dc1b14fc
+      tag: v0.1.0
   replicas: 1
 finopsGatewayService:
   ports:
@@ -50,6 +51,12 @@ metricsService:
       protocol: TCP
       targetPort: 8443
   type: ClusterIP
+webhookService:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  type: ClusterIP
 finopsGatewayIngress:
   enabled: false
   className: ""
@@ -58,6 +65,16 @@ finopsGatewayIngress:
   tls: []
   rules: []
 costJob:
+  enabled: false
+  interval: 1m
+  databaseInitTimeout: ""
+  k8sOperationTimeout: ""
+  openCostFetchTimeout: ""
+  databaseInsertTimeout: ""
+  databaseViewsRefreshTimeout: ""
+  statusUpdateTimeout: ""
+  httpClientTimeout: ""
+chargeCollectionJob:
   enabled: false
   interval: 1m
   databaseInitTimeout: ""
@@ -83,3 +100,10 @@ secrets:
   prometheus: finops-operator-prometheus-config
   postgres: finops-operator-postgres-config
   opencost: finops-operator-opencost-config
+mdoDependencies:
+  enabled: false
+  postgres:
+    postgresPassword: supersecurepassword1234
+    username: finopsuser
+    password: superfinopspassword1234
+    database: finopsdb
