@@ -22,12 +22,9 @@ declare -a SKIPPED_TESTS=()
 declare -A TEST_NAME_MAP=(
     ["dex"]="test_dex.sh"
     ["prometheus"]="test_prometheus.sh" 
-    ["kube_state_metrics"]="test_kube_state_metrics.sh"
     ["kube-state-metrics"]="test_kube_state_metrics.sh"  # Allow both dash and underscore
-    ["postgres"]="test_postgres.sh"
     ["postgresql"]="test_postgres.sh"  # Allow alternative naming
     ["opencost"]="test_opencost.sh"
-    ["open-cost"]="test_opencost.sh"   # Allow dash variant
 )
 
 usage() {

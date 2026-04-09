@@ -301,6 +301,29 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - auth.stakater.com
+    resources:
+      - clients
+      - clients/status
+      - clients/finalizers
+      - connectors
+      - connectors/status
+      - connectors/finalizers
+      - dexconfigs
+      - dexconfigs/status
+      - dexconfigs/finalizers
+      - localusers
+      - localusers/status
+      - localusers/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ##
   ## Rules for dependencies.tenantoperator.stakater.com/v1alpha1, Kind: FinOpsOperator
@@ -406,4 +429,22 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - finops.stakater.com
+    resources:
+      - pricebooks
+      - pricebooks/status
+      - pricebooks/finalizers
+      - costjobs
+      - costjobs/status
+      - costjobs/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+
 # +kubebuilder:scaffold:rules
