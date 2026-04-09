@@ -47,7 +47,7 @@ jobs:
       DOCKER_FILE_PATH: Dockerfile
       PUBLISH_BUNDLE: true
       SUBPATH: .
-      PREFLIGHT_VERSION: v1.14.1
+      PREFLIGHT_VERSION: v1.16.0
 
   notify-success:
     name: Notify Success
