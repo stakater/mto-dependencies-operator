@@ -922,6 +922,29 @@ rules:
   - update
   - watch
 - apiGroups:
+  - auth.stakater.com
+  resources:
+  - clients
+  - clients/status
+  - clients/finalizers
+  - connectors
+  - connectors/status
+  - connectors/finalizers
+  - dexconfigs
+  - dexconfigs/status
+  - dexconfigs/finalizers
+  - localusers
+  - localusers/status
+  - localusers/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - dependencies.tenantoperator.stakater.com
   resources:
   - finopsoperators
@@ -1002,6 +1025,23 @@ rules:
   - pricebooks
   - pricebooks/status
   - pricebooks/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - finops.stakater.com
+  resources:
+  - pricebooks
+  - pricebooks/status
+  - pricebooks/finalizers
+  - costjobs
+  - costjobs/status
+  - costjobs/finalizers
   verbs:
   - create
   - delete
@@ -1348,7 +1388,7 @@ spec:
         - --leader-elect
         - --leader-election-id=mto-dependencies-operator
         - --health-probe-bind-address=:8081
-        image: ghcr.io/stakater/mto-dependencies-operator:v0.0.2
+        image: ghcr.io/stakater/mto-dependencies-operator:v0.0.6
         livenessProbe:
           httpGet:
             path: /healthz

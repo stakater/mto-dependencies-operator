@@ -4,8 +4,9 @@ metadata:
   name: postgres-test
 spec:
   image:
-    repository: "postgres"
-    tag: "trixie"
+    registry: ghcr.io
+    repository: stakater/public/mto/postgresql
+    tag: "18.2"
   auth:
     enablePostgresUser: true
     postgresPassword: "test-password"

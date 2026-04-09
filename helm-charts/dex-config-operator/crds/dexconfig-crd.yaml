@@ -99,6 +99,10 @@ spec:
                     description: Dir is the directory path to serve static assets
                       from
                     type: string
+                  extra:
+                    description: Extra allows for any additional frontend configuration
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   issuer:
                     description: Issuer is the name of the issuer to display
                     type: string

@@ -27,6 +27,7 @@ rules:
   - patch
   - update
   - watch
+  - delete
 - apiGroups:
   - auth.stakater.com
   resources:

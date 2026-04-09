@@ -13,9 +13,10 @@ controllerManager:
       dexConfigSecret: dex
       dexDeployment: dex
       dexNamespace: dex
+      secretChangeAction: ""
     image:
       repository: ghcr.io/stakater/public/dex-config-operator
-      tag: v0.0.3
+      tag: v0.0.5
     resources:
       limits:
         cpu: 500m

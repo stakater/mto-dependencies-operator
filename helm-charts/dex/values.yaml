@@ -11,13 +11,13 @@ commonLabels: {}
 
 image:
   # -- Name of the image repository to pull the container image from.
-  repository: ghcr.io/dexidp/dex
+  repository: ghcr.io/stakater/public/mto/dex
 
   # -- [Image pull policy](https://kubernetes.io/docs/concepts/containers/images/#updating-images) for updating already existing images on a node.
   pullPolicy: IfNotPresent
 
   # -- Image tag override for the default value (chart appVersion).
-  tag: ""
+  tag: "2.44.0"
 
   # -- When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
   digest: ""
