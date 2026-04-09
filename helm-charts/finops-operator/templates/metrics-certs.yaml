@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "finops-operator.fullname" . }}-metrics-certs
+  labels:
+  {{- include "finops-operator.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "finops-operator.fullname" . }}-SERVICE_NAME.SERVICE_NAMESPACE.svc'
+  - '{{ include "finops-operator.fullname" . }}-SERVICE_NAME.SERVICE_NAMESPACE.svc.{{
+    .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: finops-operator-selfsigned-issuer
+  secretName: metrics-server-cert

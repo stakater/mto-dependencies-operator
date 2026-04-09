@@ -1,0 +1,231 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: offerings.finops.stakater.com
+spec:
+  group: finops.stakater.com
+  names:
+    kind: Offering
+    listKind: OfferingList
+    plural: offerings
+    singular: offering
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Offering describes a cost driving entity
+          It owns the rules for how the base cost for that entity is collected and calculated
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OfferingSpec defines the desired state of Offering.
+            properties:
+              compatibility:
+                description: |-
+                  Compatibility can be used for ensuring that any subscription created for this offering
+                  has the required offerings in its parents or siblings
+                properties:
+                  requiredOfferings:
+                    description: RequiredOfferings lists offerings that must exist
+                      in parent or sibling subscriptions
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          description: Namespace of the Offering. If empty, defaults
+                            to the Subscription's namespace.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
+              lifecycle:
+                description: Lifecycle defines how subscriptions to this offering
+                  behave during certain lifecycle events
+                properties:
+                  allowOverride:
+                    description: AllowOverride allows the subscription to override
+                      the lifecycle settings
+                    type: boolean
+                  onParentDeactivate:
+                    default: Deactivate
+                    description: |-
+                      OnParentDeactivate toggles whether subscriptions to this offering should be deactivated when their parent subscription is deactivated
+                      - Deactivate: this subscription also deactivates.
+                      - Orphan: this subscription stays active independently, while retaining the parent reference for traceability.
+                    enum:
+                    - Deactivate
+                    - Orphan
+                    type: string
+                required:
+                - onParentDeactivate
+                type: object
+              pricing:
+                description: Pricing specifies how the price for this offering is
+                  calculated
+                properties:
+                  subscriptionFee:
+                    description: |-
+                      SubscriptionFee defines the recurring fee charged for the subscription being active,
+                      independent of resource usage
+                    properties:
+                      minPeriods:
+                        description: |-
+                          MinPeriods is the minimum number of full tick periods before deletion is allowed.
+                          The collection job keeps the subscription finalizer until at least minPeriods ticks
+                          have elapsed since activation. The subscription continues accruing charges normally
+                          until the finalizer is removed.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      period:
+                        description: |-
+                          Period is the tick interval. Its interpretation depends on tickAlignment:
+                            - ActivatedAt: a Go duration string (e.g., "1h", "30m", "24h").
+                            - HourBoundary: an integer number of hours (e.g., "1", "2").
+                            - DayBoundary: an integer number of days (e.g., "1", "7").
+                            - MonthBoundary: an integer number of months (e.g., "1", "3", "12").
+                        type: string
+                      priceMicros:
+                        description: PriceMicros is the price per tick, in micro-currency
+                          units
+                        format: int64
+                        minimum: 1
+                        type: integer
+                      tickAlignment:
+                        description: |-
+                          TickAlignment defines where tick boundaries occur.
+                          ActivatedAt: ticks start at status.activatedAt (tick boundaries are: activatedAt + N*period).
+                          Best for per-subscription billing cycles (common for add-ons).
+                          HourBoundary / DayBoundary / MonthBoundary: ticks align to wall-clock boundaries.
+                          Best for synchronized billing windows across subscriptions (common for reporting).
+                          For boundary-aligned modes, the first tick after activation covers a partial period
+                          and is prorated: charge = priceMicros * actualDuration / periodDuration.
+                          For MonthBoundary, the period duration denominator is a fixed 365.25/12 days (30.4375 days).
+                        enum:
+                        - ActivatedAt
+                        - HourBoundary
+                        - DayBoundary
+                        - MonthBoundary
+                        type: string
+                    required:
+                    - period
+                    - priceMicros
+                    - tickAlignment
+                    type: object
+                    x-kubernetes-validations:
+                    - message: period must be a Go duration (e.g. '1h') for ActivatedAt
+                        alignment, or a plain integer for boundary alignments
+                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[0-9]+[hms]$'')
+                        : self.period.matches(''^[0-9]+$'')'
+                type: object
+            required:
+            - pricing
+            type: object
+            x-kubernetes-validations:
+            - message: offering spec is immutable
+              rule: self == oldSelf
+          status:
+            description: OfferingStatus defines the observed state of Offering.
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the Offering's state
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              ready:
+                description: Ready indicates whether the offering is ready to be subscribed
+                  to (i.e., all required offerings are present and no circular dependencies
+                  detected)
+                type: string
+            type: object
+        type: object
+    selectableFields:
+    - jsonPath: .status.ready
+    served: true
+    storage: true
+    subresources:
+      status: {}
+

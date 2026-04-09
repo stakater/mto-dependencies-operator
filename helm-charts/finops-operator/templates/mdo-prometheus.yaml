@@ -1,0 +1,76 @@
+{{- if .Values.mdoDependencies.enabled }}
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: Prometheus
+metadata:
+  name: {{ .Release.Name }}-prometheus
+  namespace: {{ .Release.Namespace }}
+spec:
+  rbac:
+    create: true
+  configmapReload:
+    prometheus:
+      enabled: true
+      name: configmap-reload
+      image:
+        repository: quay.io/prometheus-operator/prometheus-config-reloader
+        tag: v0.86.1
+        pullPolicy: IfNotPresent
+      containerSecurityContext: {}
+  server:
+    name: server
+    image:
+      repository: quay.io/prometheus/prometheus
+      tag: v3.5.0
+    replicaCount: 1
+    persistentVolume:
+      enabled: false
+      size: "2Gi"
+    securityContext: null
+    containerSecurityContext: null
+    global:
+      scrape_interval: 1m
+      scrape_timeout: 10s
+      evaluation_interval: 1m
+    daemonSet:
+      enabled: false
+    resources: {}
+    retention: "15d"
+    service:
+      enabled: true
+      type: ClusterIP
+      securityContext: {}
+    podSecurityContext: {}
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: true
+    securityContext:
+      enabled: false
+    containerSecurityContext: {}
+  prometheus-node-exporter:
+    enabled: true
+    rbac:
+      pspEnabled: false
+    securityContext: {}
+    containerSecurityContext: {}
+    hostNetwork: false
+    hostPID: false
+    extraHostVolumeMounts: []
+  prometheus-pushgateway:
+    enabled: false
+  commonMetaLabels: {}
+  persistentVolume:
+    enabled: true
+  extraScrapeConfigs: |
+    - job_name: {{ .Release.Name }}-opencost
+      honor_labels: true
+      scrape_interval: 1m
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      dns_sd_configs:
+        - names:
+            - {{ .Release.Name }}-opencost.{{ .Release.Namespace }}.svc.cluster.local
+          type: A
+          port: 9003
+{{- end }}

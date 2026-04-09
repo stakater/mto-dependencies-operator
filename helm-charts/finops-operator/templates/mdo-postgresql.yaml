@@ -1,0 +1,27 @@
+{{- if .Values.mdoDependencies.enabled }}
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: Postgres
+metadata:
+  name: {{ .Release.Name }}-postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  global:
+    postgresql:
+      auth:
+        username: {{ .Values.mdoDependencies.postgres.username | quote }}
+        database: {{ .Values.mdoDependencies.postgres.database | quote }}
+        password: {{ .Values.mdoDependencies.postgres.password | quote }}
+        postgresPassword: {{ .Values.mdoDependencies.postgres.postgresPassword | quote }}
+  primary:
+    persistence:
+      enabled: true
+    extraEnvVars:
+      - name: POSTGRES_DB
+        value: {{ .Values.mdoDependencies.postgres.database | quote }}
+    extraVolumeMounts:
+      - name: empty-dir
+        mountPath: /var/run/postgresql
+    resources: {}
+  shmVolume:
+    enabled: true
+{{- end }}

@@ -1,0 +1,35 @@
+{{- if .Values.chargeCollectionJob.enabled }}
+apiVersion: finops.stakater.com/v1alpha1
+kind: CostJob
+metadata:
+  labels:
+    app.kubernetes.io/name: costjob
+    app.kubernetes.io/instance: charge-collection-job
+    app.kubernetes.io/part-of: finops-operator
+  name: {{ .Release.Name }}-charge-collection-job
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: SubscriptionChargeCollection
+  interval: {{ .Values.chargeCollectionJob.interval | default "5m" }}
+  {{- if .Values.chargeCollectionJob.databaseInitTimeout }}
+  databaseInitTimeout: {{ .Values.chargeCollectionJob.databaseInitTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.k8sOperationTimeout }}
+  k8sOperationTimeout: {{ .Values.chargeCollectionJob.k8sOperationTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.openCostFetchTimeout }}
+  openCostFetchTimeout: {{ .Values.chargeCollectionJob.openCostFetchTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.databaseInsertTimeout }}
+  databaseInsertTimeout: {{ .Values.chargeCollectionJob.databaseInsertTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.databaseViewsRefreshTimeout }}
+  databaseViewsRefreshTimeout: {{ .Values.chargeCollectionJob.databaseViewsRefreshTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.statusUpdateTimeout }}
+  statusUpdateTimeout: {{ .Values.chargeCollectionJob.statusUpdateTimeout }}
+  {{- end }}
+  {{- if .Values.chargeCollectionJob.httpClientTimeout }}
+  httpClientTimeout: {{ .Values.chargeCollectionJob.httpClientTimeout }}
+  {{- end }}
+{{- end }}
