@@ -6,8 +6,8 @@ metadata:
   {{- include "finops-operator.labels" . | nindent 4 }}
 spec:
   dnsNames:
-  - '{{ include "finops-operator.fullname" . }}-SERVICE_NAME.SERVICE_NAMESPACE.svc'
-  - '{{ include "finops-operator.fullname" . }}-SERVICE_NAME.SERVICE_NAMESPACE.svc.{{
+  - 'finops-operator-controller-manager-metrics-service.{{ .Release.Namespace }}.svc'
+  - 'finops-operator-controller-manager-metrics-service.{{ .Release.Namespace }}.svc.{{
     .Values.kubernetesClusterDomain }}'
   issuerRef:
     kind: Issuer
