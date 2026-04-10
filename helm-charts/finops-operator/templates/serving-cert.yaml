@@ -12,5 +12,5 @@ spec:
     }}.svc.{{ .Values.kubernetesClusterDomain }}'
   issuerRef:
     kind: Issuer
-    name: finops-operator-selfsigned-issuer
+    name: {{ include "finops-operator.fullname" . }}-selfsigned-issuer
   secretName: webhook-server-cert

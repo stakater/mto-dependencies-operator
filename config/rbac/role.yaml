@@ -375,6 +375,19 @@ rules:
       - "networking.k8s.io"
     resources:
       - "ingresses"
+  - verbs:
+      - "*"
+    apiGroups:
+      - "cert-manager.io"
+    resources:
+      - "certificates"
+      - "issuers"
+  - verbs:
+      - "*"
+    apiGroups:
+      - "admissionregistration.k8s.io"
+    resources:
+      - "validatingwebhookconfigurations"
 
   ##
   ## Rules for dependencies.tenantoperator.stakater.com/v1alpha1, Kind: CostJob
