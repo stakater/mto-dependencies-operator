@@ -1,3 +1,4 @@
+{{- if .Values.certManager.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -6,11 +7,12 @@ metadata:
   {{- include "finops-operator.labels" . | nindent 4 }}
 spec:
   dnsNames:
-  - '{{ include "finops-operator.fullname" . }}-webhook-service.{{ .Release.Namespace
+  - 'finops-operator-webhook-service.{{ .Release.Namespace
     }}.svc'
-  - '{{ include "finops-operator.fullname" . }}-webhook-service.{{ .Release.Namespace
+  - 'finops-operator-webhook-service.{{ .Release.Namespace
     }}.svc.{{ .Values.kubernetesClusterDomain }}'
   issuerRef:
     kind: Issuer
     name: {{ include "finops-operator.fullname" . }}-selfsigned-issuer
   secretName: webhook-server-cert
+{{- end }}

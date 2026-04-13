@@ -57,6 +57,10 @@ webhookService:
       protocol: TCP
       targetPort: 9443
   type: ClusterIP
+certManager:
+  enabled: true
+openshift:
+  enabled: false
 finopsGatewayIngress:
   enabled: false
   className: ""

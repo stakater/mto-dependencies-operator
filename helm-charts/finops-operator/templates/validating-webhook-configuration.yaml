@@ -3,7 +3,12 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "finops-operator.fullname" . }}-validating-webhook-configuration
   annotations:
+    {{- if .Values.certManager.enabled }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "finops-operator.fullname" . }}-serving-cert
+    {{- end }}
+    {{- if .Values.openshift.enabled }}
+    service.beta.openshift.io/inject-cabundle: "true"
+    {{- end }}
   labels:
   {{- include "finops-operator.labels" . | nindent 4 }}
 webhooks:
