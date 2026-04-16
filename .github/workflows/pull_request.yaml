@@ -8,7 +8,7 @@ on:
     paths-ignore:
       - '*.md'
       - '.github/readme.md'
-      - 'docs/'
+      - 'docs/**'
       - 'examples/'
       - 'hack/'
 
