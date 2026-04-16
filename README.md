@@ -9,18 +9,7 @@ A Kubernetes operator that manages common infrastructure dependencies required b
 
 The MTO Dependencies Operator simplifies the deployment and management of essential infrastructure components needed by the Multi-Tenant Operator ecosystem. Instead of manually managing multiple Helm releases, this operator provides a declarative way to deploy and configure dependencies through Kubernetes Custom Resources.
 
-### Supported Dependencies
-
-| Component | Custom Resource | Description |
-|-----------|----------------|-------------|
-| **Dex** | `Dex` | OpenID Connect (OIDC) identity provider with pluggable connectors |
-| **Prometheus** | `Prometheus` | Monitoring and alerting system with time series database |
-| **Kube State Metrics** | `KubeStateMetrics` | Kubernetes object metrics exporter |
-| **PostgreSQL** | `Postgres` | Production-ready PostgreSQL database with high availability |
-| **OpenCost** | `OpenCost` | Kubernetes cost monitoring and management platform |
-| **FinOps Operator** | `FinOps Operator` | MTO cost monitoring and management platform |
-
-## Architecture
+Each Custom Resource's `.spec` maps directly to the underlying Helm chart values, so any value supported by the chart can be set in the CR. The operator handles the full lifecycle — install, upgrade, and deletion — automatically.
 
 ```
 ┌─────────────────┐    ┌───────────────────┐    ┌─────────────────┐
@@ -32,11 +21,33 @@ The MTO Dependencies Operator simplifies the deployment and management of essent
 └─────────────────┘    └───────────────────┘    └─────────────────┘
 ```
 
-The operator watches for Custom Resource changes and automatically:
-1. Validates the configuration
-2. Deploys the corresponding Helm chart
-3. Manages the lifecycle of the infrastructure components
-4. Handles upgrades and configuration changes
+## Supported Components
+
+| Component | Custom Resource | Description |
+|-----------|----------------|-------------|
+| **Dex** | `Dex` | OpenID Connect (OIDC) identity provider with pluggable connectors |
+| **PostgreSQL** | `Postgres` | Production-ready PostgreSQL database with high availability |
+| **Prometheus** | `Prometheus` | Monitoring and alerting system with time series database |
+| **Kube State Metrics** | `KubeStateMetrics` | Kubernetes object metrics exporter |
+| **OpenCost** | `OpenCost` | Kubernetes cost monitoring and management platform |
+| **Dex Config Operator** | `DexConfigOperator` | Dynamic Dex connector and OAuth client management |
+| **FinOps Operator** | `FinOpsOperator` | MTO cost monitoring and management platform |
+
+All CRs use the API group `dependencies.tenantoperator.stakater.com/v1alpha1`.
+
+## Documentation
+
+| Page | Description |
+|------|-------------|
+| [Overview](docs/overview.md) | What the operator does, managed components, and how it works |
+| [CR Reference](docs/cr-reference.md) | Field reference for all 7 Custom Resources |
+| [Deploying Dex](docs/deploying-dex.md) | Deploy an OIDC identity provider |
+| [Deploying PostgreSQL](docs/deploying-postgres.md) | Deploy a PostgreSQL database |
+| [Deploying Prometheus](docs/deploying-prometheus.md) | Deploy a monitoring stack |
+| [Deploying Kube State Metrics](docs/deploying-kube-state-metrics.md) | Deploy a Kubernetes metrics exporter |
+| [Deploying OpenCost](docs/deploying-opencost.md) | Deploy cost monitoring |
+| [Deploying DexConfigOperator](docs/deploying-dex-config-operator.md) | Deploy dynamic Dex configuration management |
+| [Deploying FinOps Operator](docs/deploying-finops-operator.md) | Deploy MTO cost management |
 
 ## Quick Start
 
@@ -94,136 +105,11 @@ spec:
       secret: my-secret-key
 ```
 
-Apply the resource:
-
 ```bash
 kubectl apply -f dex-example.yaml
 ```
 
 The operator will automatically deploy and configure Dex using the embedded Helm chart.
-
-## Custom Resources
-
-### Dex (OpenID Connect Provider)
-
-```yaml
-apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
-kind: Dex
-metadata:
-  name: dex-example
-spec:
-  config:
-    issuer: https://dex.example.com
-    storage:
-      type: kubernetes
-      config:
-        inCluster: true
-    connectors:
-    - type: oidc
-      id: keycloak
-      name: Keycloak
-      config:
-        issuer: https://keycloak.example.com/realms/mto
-        clientID: mto-console
-        redirectURI: https://dex.example.com/callback
-    staticClients:
-    - id: my-app
-      redirectURIs: ['https://my-app.example.com/callback']
-      name: 'My App'
-      secret: my-secret
-```
-
-### Prometheus (Monitoring Stack)
-
-```yaml
-apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
-kind: Prometheus
-metadata:
-  name: prometheus-example
-spec:
-  server:
-    retention: "15d"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
-  alertmanager:
-    enabled: true
-  nodeExporter:
-    enabled: true
-  kubeStateMetrics:
-    enabled: true
-```
-
-### PostgreSQL (Database)
-
-```yaml
-apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
-kind: Postgres
-metadata:
-  name: postgres-example
-spec:
-  auth:
-    postgresPassword: "secure-password"
-    username: "myuser"
-    password: "mypass"
-    database: "mydb"
-  primary:
-    persistence:
-      enabled: true
-      size: 10Gi
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-```
-
-### KubeStateMetrics
-
-```yaml
-apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
-kind: KubeStateMetrics
-metadata:
-  name: kube-state-metrics-example
-spec:
-  replicas: 1
-  resources:
-    requests:
-      cpu: 10m
-      memory: 32Mi
-  collectors:
-    - deployments
-    - pods
-    - services
-```
-
-### OpenCost
-
-```yaml
-apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
-kind: OpenCost
-metadata:
-  name: opencost-example
-spec:
-  opencost:
-    exporter:
-      defaultClusterId: "my-cluster"
-    prometheus:
-      external:
-        enabled: true
-        url: "http://prometheus-server.monitoring.svc.cluster.local"
-```
-
-### FinOps Operator
-
-Use provided sample to deploy FinOps Operator:
-
-```yaml
-kubectl apply -f config/samples/dependencies_v1alpha1_finopsoperator.yaml
-```
 
 ## Development
 
@@ -277,8 +163,6 @@ kubectl apply -f examples/
 
 ### Testing
 
-The operator includes comprehensive integration tests:
-
 ```bash
 # Lint Helm charts
 make lint
@@ -328,7 +212,7 @@ Each Custom Resource spec is passed directly to the underlying Helm chart. Refer
 - [Prometheus Helm Chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus)
 - [PostgreSQL Helm Chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql)
 - [OpenCost Helm Chart](https://github.com/opencost/opencost-helm-chart)
-- [FinOps Operator Helm Chart](https://github.com/stakater-ab/finops-operator)
+- [Kube State Metrics Helm Chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
 
 ## Monitoring and Observability
 
