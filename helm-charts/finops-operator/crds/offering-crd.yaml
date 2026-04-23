@@ -220,6 +220,121 @@ spec:
                   to (i.e., all required offerings are present and no circular dependencies
                   detected)
                 type: string
+              resolvedPricing:
+                description: ResolvedPricing contains the effective pricing derived
+                  from the offering spec
+                properties:
+                  meters:
+                    description: |-
+                      Meters contains per-meter resolved unit prices after margins are applied.
+                      Empty when no resource pricing is configured.
+                    items:
+                      description: ResolvedMeter contains the effective per-unit price
+                        for a specific meter
+                      properties:
+                        includedUsage:
+                          description: IncludedUsage is the free usage included per
+                            subscription for this meter
+                          properties:
+                            unit:
+                              description: Unit is the unit of measurement (e.g.,
+                                "GbHour", "CoreHour")
+                              type: string
+                            value:
+                              description: Value is the amount of free usage included
+                                per subscription
+                              format: int64
+                              type: integer
+                          required:
+                          - unit
+                          - value
+                          type: object
+                        name:
+                          description: Name is the meter name (e.g., "cpuHour", "ramGbHour")
+                          enum:
+                          - subscription
+                          - cpuHour
+                          - gpuHour
+                          - ramGbHour
+                          - pvcGbHour
+                          - networkIngressGbHour
+                          - networkEgressGbHour
+                          type: string
+                        unitPriceMicros:
+                          description: UnitPriceMicros is the effective per-unit price
+                            in micro-currency units (10^-6)
+                          format: int64
+                          type: integer
+                      required:
+                      - name
+                      - unitPriceMicros
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  resolvedAt:
+                    description: ResolvedAt is the timestamp when pricing was last
+                      resolved
+                    format: date-time
+                    type: string
+                  subscriptionFee:
+                    description: SubscriptionFee contains the resolved subscription
+                      fee, if configured
+                    properties:
+                      minPeriods:
+                        description: |-
+                          MinPeriods is the minimum number of full tick periods before deletion is allowed.
+                          The collection job keeps the subscription finalizer until at least minPeriods ticks
+                          have elapsed since activation. The subscription continues accruing charges normally
+                          until the finalizer is removed.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      period:
+                        description: |-
+                          Period is the tick interval. Its interpretation depends on tickAlignment:
+                            - ActivatedAt: a Go duration string (e.g., "1h", "30m", "24h").
+                            - HourBoundary: an integer number of hours (e.g., "1", "2").
+                            - DayBoundary: an integer number of days (e.g., "1", "7").
+                            - MonthBoundary: an integer number of months (e.g., "1", "3", "12").
+                        type: string
+                      priceMicros:
+                        description: PriceMicros is the price per tick, in micro-currency
+                          units
+                        format: int64
+                        minimum: 1
+                        type: integer
+                      tickAlignment:
+                        description: |-
+                          TickAlignment defines where tick boundaries occur.
+                          ActivatedAt: ticks start at status.activatedAt (tick boundaries are: activatedAt + N*period).
+                          Best for per-subscription billing cycles (common for add-ons).
+                          HourBoundary / DayBoundary / MonthBoundary: ticks align to wall-clock boundaries.
+                          Best for synchronized billing windows across subscriptions (common for reporting).
+                          For boundary-aligned modes, the first tick after activation covers a partial period
+                          and is prorated: charge = priceMicros * actualDuration / periodDuration.
+                          For MonthBoundary, the period duration denominator is a fixed 365.25/12 days (30.4375 days).
+                        enum:
+                        - ActivatedAt
+                        - HourBoundary
+                        - DayBoundary
+                        - MonthBoundary
+                        type: string
+                    required:
+                    - period
+                    - priceMicros
+                    - tickAlignment
+                    type: object
+                    x-kubernetes-validations:
+                    - message: period must be a Go duration (e.g. '1h') for ActivatedAt
+                        alignment, or a plain integer for boundary alignments
+                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[0-9]+[hms]$'')
+                        : self.period.matches(''^[0-9]+$'')'
+                required:
+                - meters
+                - resolvedAt
+                type: object
             type: object
         type: object
     selectableFields:
