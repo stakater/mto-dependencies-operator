@@ -3,6 +3,6 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- digest: sha256:05e4d8b08069bd7e646aea8a9e352610f4e01579d20c05456a0e11ad21b3830d
+- digest: sha256:a0fb6d71304c38b0ae2fe680b45b7519292d23012de8a3f07df9cff86a925c6f
   name: controller
   newName: registry.connect.redhat.com/stakater/mto-dependencies-operator
