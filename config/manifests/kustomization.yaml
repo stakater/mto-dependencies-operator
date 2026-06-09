@@ -3,5 +3,5 @@
 resources:
 - bases/mto-dependencies-operator.clusterserviceversion.yaml
 - ../default
-- ../samples
+#- ../samples
 - ../scorecard
