@@ -24,7 +24,7 @@ endif
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.3)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.3)
-VERSION ?= 0.0.6
+VERSION ?= 0.0.10
 OPERATOR_NAME ?= mto-dependencies-operator
 CATALOG_DIR_PATH ?= catalog
 DOCKER_REPO_BASE ?= ghcr.io/stakater
@@ -129,7 +129,7 @@ lint: ## Lint all helm charts by templating them
 	@echo "✓ All helm charts linted successfully!"
 
 .PHONY: test
-test: 
+test:
 	echo "NO UNIT TESTS; SKIPPING ..."
 
 .PHONY: manifests
