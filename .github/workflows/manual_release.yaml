@@ -1,6 +1,7 @@
 name: Manual Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       # restricting it to only Major Versions 0,1,2
@@ -47,7 +48,7 @@ jobs:
       DOCKER_FILE_PATH: Dockerfile
       PUBLISH_BUNDLE: true
       SUBPATH: .
-      PREFLIGHT_VERSION: v1.16.0
+      PREFLIGHT_VERSION: v1.19.0
 
   notify-success:
     name: Notify Success
