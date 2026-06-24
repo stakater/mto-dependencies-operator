@@ -26,6 +26,11 @@ spec:
         command:
         - /manager
         env:
+        - name: PROMETHEUS_URL
+          valueFrom:
+            secretKeyRef:
+              key: PROMETHEUS_URL
+              name: {{ .Values.secrets.prometheus }}        
         - name: POSTGRES_CONNECTION_STRING
           valueFrom:
             secretKeyRef:
