@@ -90,6 +90,61 @@ spec:
                 description: Pricing specifies how the price for this offering is
                   calculated
                 properties:
+                  resourcePricing:
+                    description: |-
+                      ResourcePricing defines per-meter pricing adjustments applied to raw usage.
+                      Each meter can optionally define:
+                      - includedUsage: an amount of usage included for free per subscription (same unit as the meter)
+                      - margins: either an absolute add-on (in micro-currency) or a multiplicative factor (in milli-units)
+                    items:
+                      description: Meter defines pricing adjustments for a specific
+                        meter
+                      properties:
+                        margins:
+                          description: |-
+                            Margins adjusts the price derived from raw usage for this meter.
+                            You can specify either:
+                            - absoluteMicros: an additive margin in micro-currency units (10^-6 of the currency), or
+                            - factorMilli: a multiplicative factor in milli-units (1000 = 1.000x, 1020 = 1.020x).
+                          properties:
+                            absoluteMicros:
+                              description: |-
+                                AbsoluteMicros is an additive margin in micro-currency units (10^-6 of the currency)
+                                1,000,000 micros = 1.00 currency unit
+                                Example: 0.02 cents = 0.0002 currency units = 200 micros
+                              format: int64
+                              type: integer
+                            factorMilli:
+                              description: |-
+                                FactorMilli is a multiplicative factor in milli-units
+                                1000 = 1.000x, 1020 = 1.020x (adds 2%), 980 = 0.980x (discount 2%)
+                              format: int64
+                              type: integer
+                          type: object
+                          x-kubernetes-validations:
+                          - message: absoluteMicros and factorMilli are mutually exclusive
+                              — set only one
+                            rule: '!(has(self.absoluteMicros) && has(self.factorMilli))'
+                          - message: absoluteMicros must be >= 0
+                            rule: '!has(self.absoluteMicros) || self.absoluteMicros
+                              >= 0'
+                          - message: factorMilli must be >= 0
+                            rule: '!has(self.factorMilli) || self.factorMilli >= 0'
+                        name:
+                          description: Name is the name of the meter along with unit
+                            (e.g., "cpuHour", "ramGbHour").
+                          enum:
+                          - subscription
+                          - cpuHour
+                          - gpuHour
+                          - ramGbHour
+                          - pvGbHour
+                          - networkGb
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
                   subscriptionFee:
                     description: |-
                       SubscriptionFee defines the recurring fee charged for the subscription being active,
@@ -256,9 +311,8 @@ spec:
                           - cpuHour
                           - gpuHour
                           - ramGbHour
-                          - pvcGbHour
-                          - networkIngressGbHour
-                          - networkEgressGbHour
+                          - pvGbHour
+                          - networkGb
                           type: string
                         unitPriceMicros:
                           description: UnitPriceMicros is the effective per-unit price

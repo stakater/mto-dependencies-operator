@@ -115,6 +115,35 @@ spec:
                 required:
                 - subscriptionRef
                 type: object
+              usageSources:
+                description: UsageSources defines from where the data for the resource
+                  usage of this subscription comes.
+                items:
+                  properties:
+                    name:
+                      description: Name is the name of the specific resource instance.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of the resource.
+                      type: string
+                    resourceType:
+                      description: ResourceType is the type of resource to track (e.g.,
+                        Deployment, StatefulSet, Pod).
+                      enum:
+                      - Deployment
+                      - StatefulSet
+                      - Pod
+                      - DaemonSet
+                      - Job
+                      - CronJob
+                      - ReplicaSet
+                      type: string
+                  type: object
+                  x-kubernetes-validations:
+                  - message: at least one of resourceType, name, or namespace must
+                      be set
+                    rule: has(self.resourceType) || has(self.name) || has(self.namespace)
+                type: array
             required:
             - offeringRef
             type: object
@@ -207,15 +236,14 @@ spec:
                             type: integer
                           name:
                             description: Name is the name of the cost metric (e.g.,
-                              "cpuHour", "pvcGbHour").
+                              "cpuHour", "pvGbHour").
                             enum:
                             - subscription
                             - cpuHour
                             - gpuHour
                             - ramGbHour
-                            - pvcGbHour
-                            - networkIngressGbHour
-                            - networkEgressGbHour
+                            - pvGbHour
+                            - networkGb
                             type: string
                           projected:
                             description: Projected is the projected value in micro-currency

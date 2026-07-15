@@ -433,3 +433,34 @@ helm-release: manifests kustomize download-helm-mk ## Download remote helm.mk an
 .PHONY: update-operator-hub-image-digest
 update-operator-hub-image-digest: ## Update image digest
 	$(SED) -i "s/^IMAGE_DIGEST ?=.*/IMAGE_DIGEST ?= $(IMAGE_DIGEST)/" Makefile
+
+##@ Charts
+
+# Directory vendored charts are extracted into
+HELM_CHARTS_DIR ?= helm-charts
+
+# finops-operator chart pull configuration
+FINOPS_OPERATOR_VERSION ?= 0.1.3
+FINOPS_OPERATOR_CHART   ?= oci://ghcr.io/stakater/public/charts/finops-operator
+FINOPS_OPERATOR_IMAGE   ?= ghcr.io/stakater/public/finops-operator
+FINOPS_OPERATOR_TAG     ?= v0.1.3
+FINOPS_GATEWAY_IMAGE    ?= ghcr.io/stakater/public/finops-gateway
+FINOPS_GATEWAY_TAG      ?= v0.1.3
+
+.PHONY: resync-charts
+resync-charts: pull-finops-operator ## Resync all vendored charts from their registries
+
+.PHONY: pull-finops-operator
+pull-finops-operator: yq ## Pull and postprocess the finops-operator chart
+	@echo "Pulling finops-operator chart $(FINOPS_OPERATOR_VERSION)..."
+	rm -rf $(HELM_CHARTS_DIR)/finops-operator
+	helm pull $(FINOPS_OPERATOR_CHART) --version $(FINOPS_OPERATOR_VERSION) \
+		--untar --untardir $(HELM_CHARTS_DIR)
+	@echo "Removing mto-dependencies-operator dependency..."
+	rm -rf $(HELM_CHARTS_DIR)/finops-operator/charts/mto-dependencies-operator*
+	rm -f $(HELM_CHARTS_DIR)/finops-operator/Chart.lock
+	$(YQ_BIN) -i 'del(.dependencies[] | select(.name == "mto-dependencies-operator"))' \
+		$(HELM_CHARTS_DIR)/finops-operator/Chart.yaml
+	@echo "Rewriting image repositories and tags in values.yaml..."
+	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(FINOPS_OPERATOR_IMAGE)" | .controllerManager.manager.image.tag = "$(FINOPS_OPERATOR_TAG)" | .finopsGatewayGateway.finopsGatewayContainer.image.repository = "$(FINOPS_GATEWAY_IMAGE)" | .finopsGatewayGateway.finopsGatewayContainer.image.tag = "$(FINOPS_GATEWAY_TAG)"' $(HELM_CHARTS_DIR)/finops-operator/values.yaml
+	@echo "✓ finops-operator chart resynced"
