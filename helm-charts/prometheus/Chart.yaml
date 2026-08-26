@@ -11,7 +11,7 @@ dependencies:
 - condition: alertmanager.enabled
   name: alertmanager
   repository: https://prometheus-community.github.io/helm-charts
-  version: 1.26.*
+  version: 1.42.*
 - condition: kube-state-metrics.enabled
   name: kube-state-metrics
   repository: https://prometheus-community.github.io/helm-charts
