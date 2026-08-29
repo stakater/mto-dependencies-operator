@@ -32,4 +32,8 @@ spec:
   {{- if .Values.chargeCollectionJob.httpClientTimeout }}
   httpClientTimeout: {{ .Values.chargeCollectionJob.httpClientTimeout }}
   {{- end }}
+  {{- with .Values.chargeCollectionJob.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
