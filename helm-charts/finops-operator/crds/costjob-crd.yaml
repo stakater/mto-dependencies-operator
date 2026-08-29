@@ -61,9 +61,13 @@ spec:
                   operations
                 type: string
               databaseViewsRefreshTimeout:
-                default: 5m
-                description: DatabaseViewsRefreshTimeout is the timeout for refreshing
-                  database views
+                description: |-
+                  DatabaseViewsRefreshTimeout is retained for API compatibility and has no
+                  effect. The cost ingestion job no longer refreshes any database view: the
+                  mv_provider_allocations_summary materialized view it used to rebuild on
+                  every run had no readers and was dropped in migration 14.
+
+                  Deprecated: no-op. Setting this value changes nothing.
                 type: string
               httpClientTimeout:
                 default: 90s
@@ -82,6 +86,91 @@ spec:
                 description: OpenCostFetchTimeout is the timeout for fetching data
                   from OpenCost
                 type: string
+              resources:
+                description: |-
+                  Resources overrides compute resources for the generated CronJob's loader container.
+                  Setting this replaces the whole block, so a partial value does not inherit the
+                  template defaults for the keys it omits. Unset means the operator defaults apply.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+                      This field depends on the
+                      DynamicResourceAllocation feature gate.
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                        request:
+                          description: |-
+                            Request is the name chosen for a request in the referenced claim.
+                            If empty, everything from the claim is made available, otherwise
+                            only the result of this request.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
+              sharding:
+                description: |-
+                  Sharding splits the OpenCost allocation query into several smaller
+                  namespace-filtered queries run in parallel, instead of one cluster-wide
+                  query per hour. Set this when the single query times out or exhausts
+                  memory on a large cluster. Unset means the single cluster-wide query.
+                properties:
+                  concurrency:
+                    default: 4
+                    description: |-
+                      Concurrency is how many shard queries are in flight at once. It also bounds
+                      the job's peak memory, since that many responses can be held at a time.
+                    maximum: 32
+                    minimum: 1
+                    type: integer
+                  namespacesPerShard:
+                    default: 25
+                    description: |-
+                      NamespacesPerShard is the maximum number of namespaces covered by a single
+                      OpenCost query. Lower values mean more, smaller requests.
+                    minimum: 1
+                    type: integer
+                type: object
               statusUpdateTimeout:
                 default: 1m
                 description: StatusUpdateTimeout is the timeout for status update

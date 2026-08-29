@@ -440,10 +440,10 @@ update-operator-hub-image-digest: ## Update image digest
 HELM_CHARTS_DIR ?= helm-charts
 
 # finops-operator chart pull configuration
-FINOPS_OPERATOR_VERSION ?= 0.1.3
-FINOPS_OPERATOR_CHART   ?= oci://ghcr.io/stakater/public/charts/finops-operator
-FINOPS_OPERATOR_IMAGE   ?= ghcr.io/stakater/public/finops-operator
-FINOPS_OPERATOR_TAG     ?= v0.1.3
+FINOPS_OPERATOR_VERSION ?= 0.1.5-SNAPSHOT-PR-78-f593591b
+FINOPS_OPERATOR_CHART   ?= oci://ghcr.io/stakater/charts/finops-operator
+FINOPS_OPERATOR_IMAGE   ?= ghcr.io/stakater/finops-operator
+FINOPS_OPERATOR_TAG     ?= v0.1.5-SNAPSHOT-PR-78-f593591b
 FINOPS_GATEWAY_IMAGE    ?= ghcr.io/stakater/public/finops-gateway
 FINOPS_GATEWAY_TAG      ?= v0.1.3
 
