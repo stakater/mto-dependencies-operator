@@ -1,0 +1,19 @@
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: TemplateOperatorV2
+metadata:
+  name: templateoperatorv2-sample
+spec:
+  controllerManager:
+    manager:
+      image:
+        repository: ghcr.io/stakater/public/template-operator-v2
+        tag: v0.0.7
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+    replicas: 1
+  kubernetesClusterDomain: cluster.local

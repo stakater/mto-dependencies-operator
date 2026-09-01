@@ -460,4 +460,61 @@ rules:
       - update
       - watch
 
+  ##
+  ## Rules for dependencies.tenantoperator.stakater.com/v1alpha1, Kind: TemplateOperatorV2
+  ##
+  - apiGroups:
+      - dependencies.tenantoperator.stakater.com
+    resources:
+      - templateoperatorv2s
+      - templateoperatorv2s/status
+      - templateoperatorv2s/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - verbs:
+      - "*"
+    apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - "clusterrolebindings"
+      - "clusterroles"
+      - "rolebindings"
+      - "roles"
+  - verbs:
+      - "*"
+    apiGroups:
+      - ""
+    resources:
+      - "serviceaccounts"
+      - "services"
+  - verbs:
+      - "*"
+    apiGroups:
+      - "apps"
+    resources:
+      - "deployments"
+  # The template-operator-v2 chart creates ClusterRoles granting these
+  # permissions; the manager must hold them itself or RBAC escalation
+  # prevention rejects the chart install.
+  - verbs:
+      - "*"
+    apiGroups:
+      - "templates.v2.stakater.com"
+    resources:
+      - "*"
+  - verbs:
+      - get
+      - list
+      - watch
+    apiGroups:
+      - ""
+    resources:
+      - namespaces
+
 # +kubebuilder:scaffold:rules

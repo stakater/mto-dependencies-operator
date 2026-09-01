@@ -7,4 +7,5 @@ resources:
 - dependencies_v1alpha1_opencost.yaml
 - dependencies_v1alpha1_dexconfigoperator.yaml
 - dependencies_v1alpha1_finopsoperator.yaml
+- dependencies_v1alpha1_templateoperatorv2.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
