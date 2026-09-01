@@ -53,7 +53,7 @@ spec:
 
                   Validation:
                   - A parameter override is only allowed if the corresponding Template parameter has
-                    `allowOverride: true` set.
+                    `disableOverride: false` set (or omitted, since it defaults to false).
                   - If a parameter is not overridden here, the Template's default definition is used.
                 items:
                   description: TemplateParameter defines a single parameter for TemplateInstance
@@ -61,7 +61,7 @@ spec:
                   properties:
                     defaultValue:
                       description: |-
-                        DefaultValue is used when `valueFrom` fails or resolves to empty.
+                        DefaultValue is used when `valueFrom` fails.
                         Only valid with valueFrom.
                       type: string
                     name:
@@ -137,12 +137,82 @@ spec:
                                 Namespace of the target resource.
                                 When empty, namespaced resources are listed across all namespaces;
                                 cluster-scoped resources ignore this field.
+                                Mutually exclusive with NamespaceSelector.
                               type: string
+                            namespaceSelector:
+                              description: |-
+                                NamespaceSelector matches the namespaces in which to LIST/watch the
+                                target GVK. Only meaningful in LIST mode (Name empty). The matched
+                                namespace set is kept current as namespaces are created, deleted, or
+                                relabeled.
+
+                                Mutually exclusive with Namespace. Has no effect on cluster-scoped
+                                target GVKs (operator surfaces an error at resolution time).
+
+                                RBAC: requires the operator's ServiceAccount to have
+                                namespaces: list, watch.
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: |-
+                                      A label selector requirement is a selector that contains values, a key, and an operator that
+                                      relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the
+                                          selector applies to.
+                                        type: string
+                                      operator:
+                                        description: |-
+                                          operator represents a key's relationship to a set of values.
+                                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: |-
+                                          values is an array of string values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                          the values array must be empty. This array is replaced during a strategic
+                                          merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                        x-kubernetes-list-type: atomic
+                                    required:
+                                    - key
+                                    - operator
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: |-
+                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                              x-kubernetes-map-type: atomic
                           required:
                           - apiVersion
                           - jsonPath
                           - kind
                           type: object
+                          x-kubernetes-validations:
+                          - message: namespace and namespaceSelector are mutually
+                              exclusive
+                            rule: '!(has(self.namespace) && has(self.namespaceSelector))'
+                          - message: namespaceSelector requires LIST mode (name must
+                              be empty)
+                            rule: '!has(self.namespaceSelector) || !has(self.name)'
+                          - message: namespaceSelector must specify a non-empty matchLabels
+                              or matchExpressions
+                            rule: '!has(self.namespaceSelector) || (has(self.namespaceSelector.matchLabels)
+                              && size(self.namespaceSelector.matchLabels) > 0) ||
+                              (has(self.namespaceSelector.matchExpressions) && size(self.namespaceSelector.matchExpressions)
+                              > 0)'
                         secretKeyRef:
                           description: SecretKeyRef reads a key from a Secret.
                           properties:
@@ -262,11 +332,45 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              matchedNamespaces:
+                description: |-
+                  matchedNamespaces lists the namespaces resolved by any parameter whose
+                  objectFieldRef.namespaceSelector matched a non-empty set on the last
+                  reconcile. Populated only when at least one such parameter exists.
+                  Useful for debugging "why does my TI include / exclude this namespace?".
+
+                  The list is bounded — selectors matching more than 100 namespaces are
+                  truncated and the truncated set is logged.
+                items:
+                  type: string
+                maxItems: 100
+                type: array
+                x-kubernetes-list-type: set
               observedGeneration:
                 description: observedGeneration represents the .metadata.generation
                   that the controller last successfully reconciled.
                 format: int64
                 type: integer
+              outputs:
+                additionalProperties:
+                  additionalProperties:
+                    type: string
+                  type: object
+                description: |-
+                  outputs maps each Template output field name (outer key) to a map of
+                  rendered keyTemplate (inner key) -> extracted value. Populated from
+                  Template.spec.outputs against this instance's rendered resources.
+                type: object
+              outputsObservedAt:
+                description: |-
+                  outputsObservedAt is the time the output values (the outputs map) last changed.
+                  It advances only when a resolution produces a different map than the stored one,
+                  not on every check and not when only the OutputsResolved condition message
+                  changes while the values are unchanged. It is a last-value-change marker, not a
+                  liveness probe; condition status transitions are timestamped separately by the
+                  OutputsResolved condition's own lastTransitionTime.
+                format: date-time
+                type: string
               phase:
                 description: phase summarizes the overall validation state of the
                   Template.
@@ -303,6 +407,19 @@ spec:
                       description: namespace of the resource
                       maxLength: 63
                       type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration is the metadata.generation of this resource
+                        at the time it was last successfully applied by the controller.
+                      format: int64
+                      type: integer
+                    status:
+                      description: status indicates the health of this resource. Empty
+                        means successfully applied.
+                      enum:
+                      - ""
+                      - Failed
+                      type: string
                   required:
                   - apiVersion
                   - kind
@@ -317,11 +434,16 @@ spec:
                   AFTER merging Template defaults and Instance overrides.
                 items:
                   description: |-
-                    ResolvedParameter records the source used for a parameter after merging
-                    Template defaults and Instance overrides.
+                    ResolvedParameter records the source and optionally the value used for a parameter
+                    after merging Template defaults and Instance overrides.
                   properties:
                     name:
                       description: Name of the parameter.
+                      type: string
+                    value:
+                      description: |-
+                        Value is the resolved parameter value. Only populated when the
+                        Template parameter has exposeInStatus: true.
                       type: string
                     valueFrom:
                       description: |-
@@ -387,12 +509,82 @@ spec:
                                 Namespace of the target resource.
                                 When empty, namespaced resources are listed across all namespaces;
                                 cluster-scoped resources ignore this field.
+                                Mutually exclusive with NamespaceSelector.
                               type: string
+                            namespaceSelector:
+                              description: |-
+                                NamespaceSelector matches the namespaces in which to LIST/watch the
+                                target GVK. Only meaningful in LIST mode (Name empty). The matched
+                                namespace set is kept current as namespaces are created, deleted, or
+                                relabeled.
+
+                                Mutually exclusive with Namespace. Has no effect on cluster-scoped
+                                target GVKs (operator surfaces an error at resolution time).
+
+                                RBAC: requires the operator's ServiceAccount to have
+                                namespaces: list, watch.
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: |-
+                                      A label selector requirement is a selector that contains values, a key, and an operator that
+                                      relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the
+                                          selector applies to.
+                                        type: string
+                                      operator:
+                                        description: |-
+                                          operator represents a key's relationship to a set of values.
+                                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: |-
+                                          values is an array of string values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                          the values array must be empty. This array is replaced during a strategic
+                                          merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                        x-kubernetes-list-type: atomic
+                                    required:
+                                    - key
+                                    - operator
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: |-
+                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                              x-kubernetes-map-type: atomic
                           required:
                           - apiVersion
                           - jsonPath
                           - kind
                           type: object
+                          x-kubernetes-validations:
+                          - message: namespace and namespaceSelector are mutually
+                              exclusive
+                            rule: '!(has(self.namespace) && has(self.namespaceSelector))'
+                          - message: namespaceSelector requires LIST mode (name must
+                              be empty)
+                            rule: '!has(self.namespaceSelector) || !has(self.name)'
+                          - message: namespaceSelector must specify a non-empty matchLabels
+                              or matchExpressions
+                            rule: '!has(self.namespaceSelector) || (has(self.namespaceSelector.matchLabels)
+                              && size(self.namespaceSelector.matchLabels) > 0) ||
+                              (has(self.namespaceSelector.matchExpressions) && size(self.namespaceSelector.matchExpressions)
+                              > 0)'
                         secretKeyRef:
                           description: SecretKeyRef reads a key from a Secret.
                           properties:
@@ -441,6 +633,13 @@ spec:
                 - name
                 - namespace
                 type: object
+              trackedGVKs:
+                description: trackedGVKs is the set of GroupVersionKinds this TemplateInstance
+                  has rendered.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
             type: object
         type: object
     served: true

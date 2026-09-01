@@ -447,8 +447,14 @@ FINOPS_OPERATOR_TAG     ?= v0.1.3
 FINOPS_GATEWAY_IMAGE    ?= ghcr.io/stakater/public/finops-gateway
 FINOPS_GATEWAY_TAG      ?= v0.1.3
 
+# template-operator-v2 chart pull configuration
+TEMPLATE_OPERATOR_V2_VERSION ?= 0.0.7
+TEMPLATE_OPERATOR_V2_CHART   ?= oci://ghcr.io/stakater/public/charts/template-operator-v2
+TEMPLATE_OPERATOR_V2_IMAGE   ?= ghcr.io/stakater/public/template-operator-v2
+TEMPLATE_OPERATOR_V2_TAG     ?= v0.0.7
+
 .PHONY: resync-charts
-resync-charts: pull-finops-operator ## Resync all vendored charts from their registries
+resync-charts: pull-finops-operator pull-template-operator-v2 ## Resync all vendored charts from their registries
 
 .PHONY: pull-finops-operator
 pull-finops-operator: yq ## Pull and postprocess the finops-operator chart
@@ -464,3 +470,13 @@ pull-finops-operator: yq ## Pull and postprocess the finops-operator chart
 	@echo "Rewriting image repositories and tags in values.yaml..."
 	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(FINOPS_OPERATOR_IMAGE)" | .controllerManager.manager.image.tag = "$(FINOPS_OPERATOR_TAG)" | .finopsGatewayGateway.finopsGatewayContainer.image.repository = "$(FINOPS_GATEWAY_IMAGE)" | .finopsGatewayGateway.finopsGatewayContainer.image.tag = "$(FINOPS_GATEWAY_TAG)"' $(HELM_CHARTS_DIR)/finops-operator/values.yaml
 	@echo "✓ finops-operator chart resynced"
+
+.PHONY: pull-template-operator-v2
+pull-template-operator-v2: yq ## Pull and postprocess the template-operator-v2 chart
+	@echo "Pulling template-operator-v2 chart $(TEMPLATE_OPERATOR_V2_VERSION)..."
+	rm -rf $(HELM_CHARTS_DIR)/template-operator-v2
+	helm pull $(TEMPLATE_OPERATOR_V2_CHART) --version $(TEMPLATE_OPERATOR_V2_VERSION) \
+		--untar --untardir $(HELM_CHARTS_DIR)
+	@echo "Rewriting image repository and tag in values.yaml..."
+	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(TEMPLATE_OPERATOR_V2_IMAGE)" | .controllerManager.manager.image.tag = "$(TEMPLATE_OPERATOR_V2_TAG)"' $(HELM_CHARTS_DIR)/template-operator-v2/values.yaml
+	@echo "✓ template-operator-v2 chart resynced"

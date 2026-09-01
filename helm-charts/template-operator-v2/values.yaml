@@ -1,17 +1,17 @@
 controllerManager:
   manager:
     args:
-    - --metrics-bind-address=:8443
-    - --leader-elect
-    - --health-probe-bind-address=:8081
+      - --leader-elect
+      - --health-probe-bind-address=:8081
+      - --enable-webhooks
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
-        - ALL
+          - ALL
     image:
-      repository: ghcr.io/stakater/template-operator-v2
-      tag: v0.0.1
+      repository: ghcr.io/stakater/public/template-operator-v2
+      tag: v0.0.7
     resources:
       limits:
         cpu: 500m
@@ -31,17 +31,22 @@ imagePullSecrets: []
 kubernetesClusterDomain: cluster.local
 ms:
   ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: 8443
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
   type: ClusterIP
 serviceAccount:
   annotations: {}
   automount: true
   create: true
   name: ""
-
+webhookService:
+  annotations: {}
+  ports:
+    - port: 443
+      targetPort: 9443
+  type: ClusterIP
 rbac:
   # clusterAdmin grants the operator SA the cluster-admin ClusterRole.
   # WARNING: Insecure. For local development and testing only.
@@ -50,13 +55,20 @@ rbac:
     enabled: false
   # additionalRules appends extra PolicyRule entries to the manager ClusterRole.
   # Use this to grant the operator access to API groups used by your templates.
-  # SECURITY: every read permission granted here is transitively available to
-  # any user who can create a TemplateInstance WITHOUT spec.serviceAccountRef —
-  # such instances resolve valueFrom parameters with the operator's own identity.
-  # Multi-tenant clusters should require serviceAccountRef via admission policy
-  # (e.g. Kyverno/OPA) so parameter reads are always scoped to a tenant SA.
   additionalRules: []
-
+# certManager controls the cert-manager Issuer/Certificate that issue the
+# webhook serving cert. When enabled, the webhook config is annotated with
+# cert-manager.io/inject-ca-from so cert-manager injects the CA bundle.
+# Disable on clusters without cert-manager (e.g. OpenShift).
+certManager:
+  enabled: true
+# webhookConfig.annotations are merged onto the ValidatingWebhookConfiguration.
+# On OpenShift, set service.beta.openshift.io/inject-cabundle: "true" here so the
+# service-ca operator injects the CA bundle (and set webhookService.annotations'
+# service.beta.openshift.io/serving-cert-secret-name to webhook-server-cert so it
+# issues the matching serving cert).
+webhookConfig:
+  annotations: {}
 # Extra volumes, volume mounts, and environment variables for the manager container.
 # Use extraVolumeMounts/extraVolumes to inject custom CA bundles, config files, etc.
 # Use extraEnvVars to set additional environment variables (e.g. SSL_CERT_DIR).

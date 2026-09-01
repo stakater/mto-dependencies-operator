@@ -1,0 +1,18 @@
+{{- if .Values.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "template-operator-v2.fullname" . }}-serving-cert
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "template-operator-v2.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc'
+  - '{{ include "template-operator-v2.fullname" . }}-webhook-service.{{ .Release.Namespace
+    }}.svc.{{ .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: template-operator-v2-selfsigned-issuer
+  secretName: webhook-server-cert
+{{- end }}

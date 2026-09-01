@@ -12,15 +12,7 @@ rules:
   verbs:
   - get
   - list
-# get: spec.serviceAccountRef existence check; impersonate: resolve a
-# TemplateInstance's valueFrom parameters as its referenced ServiceAccount.
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - impersonate
+  - watch
 - apiGroups:
   - templates.v2.stakater.com
   resources:

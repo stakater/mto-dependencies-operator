@@ -163,6 +163,170 @@ spec:
                 required:
                 - chart
                 type: object
+              outputs:
+                description: |-
+                  Outputs declare named extractions from this Template's rendered resources,
+                  surfaced on TemplateInstance.status.outputs. Each entry chooses exactly one
+                  iteration mode by field combination:
+                    - from only          single-resource extraction
+                    - fromAll only        iterate all rendered resources of a GVK
+                    - from + forEach      iterate an array of objects inside one resource
+                items:
+                  description: TemplateOutput declares a named extraction from this
+                    Template's rendered resources.
+                  properties:
+                    fields:
+                      description: |-
+                        Fields are the JSONPath extractions performed against each matched resource
+                        (or, for forEach, each array element).
+                      items:
+                        description: OutputField is a single JSONPath extraction mapped
+                          to one outer status key.
+                        properties:
+                          jsonPath:
+                            description: |-
+                              JSONPath query wrapped in {...}. A scalar result is stored as-is; an
+                              array/object result is JSON-encoded (e.g. "{.foo[*].ip}" -> '["v4","v6"]').
+                            maxLength: 256
+                            minLength: 1
+                            type: string
+                            x-kubernetes-validations:
+                            - message: jsonPath must be a single JSONPath query wrapped
+                                in {...}
+                              rule: self.matches('^[{][^{}]*[}]$')
+                          name:
+                            description: |-
+                              Name is the OUTER key under status.outputs. Must be unique across the
+                              FLATTENED set of all outputs[].fields[].name in this Template (enforced by
+                              the Template reconciler).
+                            maxLength: 63
+                            minLength: 1
+                            pattern: ^[a-zA-Z][a-zA-Z0-9]*$
+                            type: string
+                        required:
+                        - jsonPath
+                        - name
+                        type: object
+                      maxItems: 50
+                      minItems: 1
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - name
+                      x-kubernetes-list-type: map
+                    forEach:
+                      description: |-
+                        ForEach iterates an array OF OBJECTS inside the resource named by `from`.
+                        JSONPath query wrapped in {...}; "{.__index}" (zero-based position) is
+                        available to keyTemplate. Required for forEach mode; absent otherwise.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                      x-kubernetes-validations:
+                      - message: forEach must be a single JSONPath query wrapped in
+                          {...}
+                        rule: self.matches('^[{][^{}]*[}]$')
+                    from:
+                      description: |-
+                        From selects a single rendered resource. Required for single-resource and
+                        forEach modes; must be absent in fromAll mode.
+                      properties:
+                        apiVersion:
+                          description: APIVersion of the source resource (e.g. "v1",
+                            "apps/v1").
+                          maxLength: 253
+                          type: string
+                          x-kubernetes-validations:
+                          - message: apiVersion must be 'version' or 'group/version'
+                              (at most one '/')
+                            rule: self.matches('^[^/]+(/[^/]+)?$')
+                        kind:
+                          description: |-
+                            Kind of the source resource. Kind: Secret is refused at admission because
+                            TemplateInstance status is broadly readable to anyone with get templateinstance.
+                          maxLength: 63
+                          type: string
+                          x-kubernetes-validations:
+                          - message: reading from Secrets is not allowed; status is
+                              broadly readable
+                            rule: self != 'Secret'
+                        name:
+                          description: |-
+                            Name is a JSONPath template ({...}) evaluated against the Template context
+                            ({"parameters": {...}, "instance": {name, namespace, labels}}). The rendered
+                            name must exist in status.renderedResources at extraction time.
+                          maxLength: 256
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: |-
+                            Namespace is a JSONPath template ({...}); defaults to the TemplateInstance's
+                            namespace when omitted. Ignored for cluster-scoped kinds.
+                          maxLength: 253
+                          type: string
+                      required:
+                      - apiVersion
+                      - kind
+                      - name
+                      type: object
+                    fromAll:
+                      description: |-
+                        FromAll iterates every rendered resource matching the GVK. Mutually exclusive
+                        with from and forEach.
+                      properties:
+                        apiVersion:
+                          description: APIVersion of the source resources (e.g. "apps/v1").
+                          maxLength: 253
+                          type: string
+                          x-kubernetes-validations:
+                          - message: apiVersion must be 'version' or 'group/version'
+                              (at most one '/')
+                            rule: self.matches('^[^/]+(/[^/]+)?$')
+                        kind:
+                          description: 'Kind of the source resources. Kind: Secret
+                            is refused at admission.'
+                          maxLength: 63
+                          type: string
+                          x-kubernetes-validations:
+                          - message: reading from Secrets is not allowed; status is
+                              broadly readable
+                            rule: self != 'Secret'
+                        namespace:
+                          description: |-
+                            Namespace is a JSONPath template ({...}) scoping the iteration; when omitted,
+                            iterates across every namespace this instance rendered into.
+                          maxLength: 253
+                          type: string
+                      required:
+                      - apiVersion
+                      - kind
+                      type: object
+                    keyTemplate:
+                      description: |-
+                        KeyTemplate renders the inner status-map key (JSONPath template, {...}).
+                        Required for forEach. Optional for fromAll (runtime scope-aware default:
+                        namespaced -> "{.metadata.namespace}/{.metadata.name}", cluster-scoped ->
+                        "{.metadata.name}"). Optional for single mode (defaults to "{.metadata.name}").
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    name:
+                      description: |-
+                        Name is the parent identifier for this output entry, unique across outputs[].
+                        It is NOT surfaced in TemplateInstance status; the user-visible status keys
+                        come from each fields[].name below.
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-zA-Z][a-zA-Z0-9]*$
+                      type: string
+                  required:
+                  - fields
+                  - name
+                  type: object
+                maxItems: 50
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               parameters:
                 description: |-
                   Parameters define the inputs required to render the template.
@@ -173,22 +337,82 @@ spec:
                   description: TemplateParameterDefinition defines a single parameter
                     for the template.
                   properties:
+                    disableOverride:
+                      description: |-
+                        DisableOverride controls whether a TemplateInstance may supply its own
+                        value for this parameter. Defaults to false (allow override) when omitted.
+                      type: boolean
+                    exposeInStatus:
+                      description: |-
+                        ExposeInStatus controls whether the resolved value appears in
+                        TemplateInstance status resolvedParameters. Defaults to false (hidden).
+                      type: boolean
                     name:
                       description: Name is the name of the parameter
                       minLength: 1
                       type: string
+                    required:
+                      description: |-
+                        Required, if true, means the TemplateInstance MUST provide a value
+                        for this parameter, regardless of whether the template has a default.
+                      type: boolean
+                    type:
+                      description: |-
+                        Type declares the expected type for validation of both template
+                        default values and instance overrides.
+                      enum:
+                      - string
+                      - number
+                      - bool
+                      - array
+                      - object
+                      type: string
                     value:
                       description: |-
-                        Option 1 (literal): string|number|bool
-                        Value provides a literal parameter value (string, number, or bool).
-                      type: string
+                        Value provides the parameter's literal default. It may be a scalar
+                        (string, number, bool), a list, or an object, matching the declared type.
+                      x-kubernetes-preserve-unknown-fields: true
                   required:
                   - name
                   type: object
+                  x-kubernetes-validations:
+                  - message: parameter cannot be both required and non-overridable
+                    rule: '!(has(self.required) && self.required && has(self.disableOverride)
+                      && self.disableOverride)'
                 type: array
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              sync:
+                description: Sync controls drift protection for rendered resources.
+                properties:
+                  ignoreFields:
+                    description: |-
+                      IgnoreFields defines field paths that are exempt from enforcement.
+                      Changes to these fields are allowed even when sync is enabled.
+
+                      Field paths use dot-separated notation and are evaluated per rendered object.
+                      Array wildcards are supported via [*] notation.
+                      Examples: "metadata.annotations", "spec.replicas", "spec.template.spec.containers[*].env"
+                    items:
+                      type: string
+                    type: array
+                  mode:
+                    default: "off"
+                    description: |-
+                      Mode selects the drift protection strategy.
+
+                      - off (default): resources are created once with no ongoing enforcement.
+                      - revert: the controller continuously reconciles rendered resources,
+                        reverting external drift back to the desired state.
+                      - strict: same as revert, plus an admission webhook proactively blocks
+                        unauthorized UPDATE/DELETE on rendered resources.
+                    enum:
+                    - "off"
+                    - revert
+                    - strict
+                    type: string
+                type: object
               targetNamespaces:
                 description: |-
                   TargetNamespaces controls where this Template may be instantiated.
@@ -272,6 +496,14 @@ spec:
             x-kubernetes-validations:
             - message: exactly one of gotemplate or helm must be specified
               rule: has(self.gotemplate) != has(self.helm)
+            - message: 'each outputs entry must set exactly one combination: from-only,
+                fromAll-only, or from+forEach'
+              rule: '!has(self.outputs) || self.outputs.all(o, (has(o.from) && !has(o.fromAll)
+                && !has(o.forEach)) || (!has(o.from) && has(o.fromAll) && !has(o.forEach))
+                || (has(o.from) && !has(o.fromAll) && has(o.forEach)))'
+            - message: keyTemplate is required when forEach is set
+              rule: '!has(self.outputs) || self.outputs.all(o, has(o.forEach) ? has(o.keyTemplate)
+                : true)'
           status:
             description: TemplateStatus defines the observed state of Template.
             properties:

@@ -516,5 +516,18 @@ rules:
       - ""
     resources:
       - namespaces
+  - verbs:
+      - "*"
+    apiGroups:
+      - "cert-manager.io"
+    resources:
+      - "certificates"
+      - "issuers"
+  - verbs:
+      - "*"
+    apiGroups:
+      - "admissionregistration.k8s.io"
+    resources:
+      - "validatingwebhookconfigurations"
 
 # +kubebuilder:scaffold:rules
