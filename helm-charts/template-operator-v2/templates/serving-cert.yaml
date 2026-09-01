@@ -7,12 +7,12 @@ metadata:
   {{- include "template-operator-v2.labels" . | nindent 4 }}
 spec:
   dnsNames:
-  - '{{ include "template-operator-v2.fullname" . }}-webhook-service.{{ .Release.Namespace
+  - 'template-operator-v2-webhook-service.{{ .Release.Namespace
     }}.svc'
-  - '{{ include "template-operator-v2.fullname" . }}-webhook-service.{{ .Release.Namespace
+  - 'template-operator-v2-webhook-service.{{ .Release.Namespace
     }}.svc.{{ .Values.kubernetesClusterDomain }}'
   issuerRef:
     kind: Issuer
-    name: template-operator-v2-selfsigned-issuer
+    name: {{ include "template-operator-v2.fullname" . }}-selfsigned-issuer
   secretName: webhook-server-cert
 {{- end }}
