@@ -30,6 +30,17 @@ test_templateoperatorv2_cr() {
     # Create test namespace
     create_test_namespace
 
+    # The chart defaults to certManager.enabled=true and renders cert-manager
+    # Certificate/Issuer for the webhook serving cert, so cert-manager (and its
+    # CRDs) must exist before the CR is applied.
+    log_info "Installing cert-manager (required by the chart's webhook certificates)"
+    if ! helm upgrade --install cert-manager cert-manager --repo https://charts.jetstack.io \
+        --namespace cert-manager --create-namespace \
+        --set crds.enabled=true --wait --timeout 5m; then
+        log_error "Failed to install cert-manager"
+        return 1
+    fi
+
     # Apply the TemplateOperatorV2 CR
     log_info "Applying TemplateOperatorV2 Custom Resource"
     if ! apply_and_wait "$SCRIPT_DIR/../fixtures/template-operator-v2-test.yaml" "templateoperatorv2" "$CR_NAME"; then
@@ -86,6 +97,14 @@ test_templateoperatorv2_cr() {
         fi
     done
 
+    # Check that the sync-enforcement webhook configuration was created
+    log_info "Checking for the sync-enforcement ValidatingWebhookConfiguration"
+    if kubectl get validatingwebhookconfigurations -o name | grep -q "sync-enforcement"; then
+        log_success "sync-enforcement ValidatingWebhookConfiguration created"
+    else
+        log_warning "sync-enforcement ValidatingWebhookConfiguration not found"
+    fi
+
     # Check that the metrics service was created
     log_info "Checking for template-operator-v2 metrics service"
     if ! wait_for_resource "service" "${DEPLOYMENT_NAME}-ms"; then
@@ -106,6 +125,7 @@ test_templateoperatorv2_cr() {
 cleanup_templateoperatorv2_test() {
     log_info "Cleaning up TemplateOperatorV2 test resources"
     kubectl delete templateoperatorv2 "$CR_NAME" -n "$NAMESPACE" --ignore-not-found=true || true
+    helm uninstall cert-manager -n cert-manager || true
     cleanup_test_namespace
 }
 
