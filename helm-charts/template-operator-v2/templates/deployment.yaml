@@ -84,7 +84,7 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: webhook-server-cert
+          secretName: template-operator-v2-webhook-server-cert
       - emptyDir: {}
         name: helm-cache
       {{- if .Values.extraVolumes }}

@@ -65,7 +65,7 @@ certManager:
 # webhookConfig.annotations are merged onto the ValidatingWebhookConfiguration.
 # On OpenShift, set service.beta.openshift.io/inject-cabundle: "true" here so the
 # service-ca operator injects the CA bundle (and set webhookService.annotations'
-# service.beta.openshift.io/serving-cert-secret-name to webhook-server-cert so it
+# service.beta.openshift.io/serving-cert-secret-name to template-operator-v2-webhook-server-cert so it
 # issues the matching serving cert).
 webhookConfig:
   annotations: {}

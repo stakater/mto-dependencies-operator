@@ -477,11 +477,6 @@ pull-template-operator-v2: yq ## Pull and postprocess the template-operator-v2 c
 	rm -rf $(HELM_CHARTS_DIR)/template-operator-v2
 	helm pull $(TEMPLATE_OPERATOR_V2_CHART) --version $(TEMPLATE_OPERATOR_V2_VERSION) \
 		--untar --untardir $(HELM_CHARTS_DIR)
-	@echo "Fixing serving-cert cross-references (upstream chart bug: the webhook cert only resolves when the release is named exactly template-operator-v2)..."
-	$(SED) -i 's|name: template-operator-v2-selfsigned-issuer|name: {{ include "template-operator-v2.fullname" . }}-selfsigned-issuer|' \
-		$(HELM_CHARTS_DIR)/template-operator-v2/templates/serving-cert.yaml
-	$(SED) -i 's|{{ include "template-operator-v2.fullname" . }}-webhook-service|template-operator-v2-webhook-service|g' \
-		$(HELM_CHARTS_DIR)/template-operator-v2/templates/serving-cert.yaml
 	@echo "Rewriting image repository and tag in values.yaml..."
 	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(TEMPLATE_OPERATOR_V2_IMAGE)" | .controllerManager.manager.image.tag = "$(TEMPLATE_OPERATOR_V2_TAG)"' $(HELM_CHARTS_DIR)/template-operator-v2/values.yaml
 	@echo "✓ template-operator-v2 chart resynced"

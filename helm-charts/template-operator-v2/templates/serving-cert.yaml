@@ -14,5 +14,5 @@ spec:
   issuerRef:
     kind: Issuer
     name: {{ include "template-operator-v2.fullname" . }}-selfsigned-issuer
-  secretName: webhook-server-cert
+  secretName: template-operator-v2-webhook-server-cert
 {{- end }}
