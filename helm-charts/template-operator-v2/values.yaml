@@ -11,7 +11,7 @@ controllerManager:
           - ALL
     image:
       repository: ghcr.io/stakater/public/template-operator-v2
-      tag: v0.0.7
+      tag: v0.0.8
     resources:
       limits:
         cpu: 500m
@@ -65,10 +65,16 @@ certManager:
 # webhookConfig.annotations are merged onto the ValidatingWebhookConfiguration.
 # On OpenShift, set service.beta.openshift.io/inject-cabundle: "true" here so the
 # service-ca operator injects the CA bundle (and set webhookService.annotations'
-# service.beta.openshift.io/serving-cert-secret-name to template-operator-v2-webhook-server-cert so it
-# issues the matching serving cert).
+# service.beta.openshift.io/serving-cert-secret-name to the webhook.certSecretName
+# value so it issues the matching serving cert).
 webhookConfig:
   annotations: {}
+# webhook.certSecretName is the Secret that holds the webhook serving cert.
+# The name must be unique per operator in a namespace: the kubebuilder default
+# (webhook-server-cert) collides with other scaffolded operators installed in
+# the same namespace, e.g. finops-operator under MTO.
+webhook:
+  certSecretName: template-operator-v2-webhook-server-cert
 # Extra volumes, volume mounts, and environment variables for the manager container.
 # Use extraVolumeMounts/extraVolumes to inject custom CA bundles, config files, etc.
 # Use extraEnvVars to set additional environment variables (e.g. SSL_CERT_DIR).

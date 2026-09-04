@@ -16,7 +16,7 @@ spec:
             - ALL
       image:
         repository: ghcr.io/stakater/public/template-operator-v2
-        tag: v0.0.7
+        tag: v0.0.8
       resources:
         limits:
           cpu: 500m

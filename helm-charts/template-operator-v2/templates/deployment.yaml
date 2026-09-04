@@ -9,13 +9,11 @@ spec:
   replicas: {{ .Values.controllerManager.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: template-operator-v2
       control-plane: controller-manager
     {{- include "template-operator-v2.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: template-operator-v2
         control-plane: controller-manager
       {{- include "template-operator-v2.selectorLabels" . | nindent 8 }}
       annotations:
@@ -84,7 +82,7 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: template-operator-v2-webhook-server-cert
+          secretName: {{ .Values.webhook.certSecretName }}
       - emptyDir: {}
         name: helm-cache
       {{- if .Values.extraVolumes }}

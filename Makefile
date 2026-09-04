@@ -448,10 +448,10 @@ FINOPS_GATEWAY_IMAGE    ?= ghcr.io/stakater/public/finops-gateway
 FINOPS_GATEWAY_TAG      ?= v0.1.3
 
 # template-operator-v2 chart pull configuration
-TEMPLATE_OPERATOR_V2_VERSION ?= 0.0.7
+TEMPLATE_OPERATOR_V2_VERSION ?= 0.0.8
 TEMPLATE_OPERATOR_V2_CHART   ?= oci://ghcr.io/stakater/public/charts/template-operator-v2
 TEMPLATE_OPERATOR_V2_IMAGE   ?= ghcr.io/stakater/public/template-operator-v2
-TEMPLATE_OPERATOR_V2_TAG     ?= v0.0.7
+TEMPLATE_OPERATOR_V2_TAG     ?= v0.0.8
 
 .PHONY: resync-charts
 resync-charts: pull-finops-operator pull-template-operator-v2 ## Resync all vendored charts from their registries
