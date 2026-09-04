@@ -4,7 +4,7 @@ The MTO Dependencies Operator is a Kubernetes operator that manages common infra
 
 ## Managed Components
 
-The operator manages 7 infrastructure components:
+The operator manages 8 infrastructure components:
 
 | Component | CR Kind | Purpose |
 |-----------|---------|---------|
@@ -15,6 +15,7 @@ The operator manages 7 infrastructure components:
 | OpenCost | `OpenCost` | Kubernetes cost monitoring |
 | Dex Config Operator | `DexConfigOperator` | Dynamic Dex connector and OAuth client management |
 | FinOps Operator | `FinOpsOperator` | MTO-specific cost management platform |
+| Template Operator v2 | `TemplateOperatorV2` | Cross-namespace resource templating (Templates and TemplateInstances) |
 
 All CRs use the API group `dependencies.tenantoperator.stakater.com/v1alpha1`.
 
@@ -34,5 +35,5 @@ Each Custom Resource maps to an embedded Helm chart. The CR's `.spec` is passed 
 
 ## Next Steps
 
-- [CR Reference](cr-reference.md) — Field reference for all 7 Custom Resources
+- [CR Reference](cr-reference.md) — Field reference for all 8 Custom Resources
 - Deployment guides — Step-by-step instructions for each component

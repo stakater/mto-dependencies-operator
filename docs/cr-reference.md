@@ -142,6 +142,27 @@ All Custom Resources belong to the API group `dependencies.tenantoperator.stakat
 
 ---
 
+## TemplateOperatorV2
+
+**Kind:** `TemplateOperatorV2` | Distributes templated Kubernetes resources across namespaces (Templates and TemplateInstances), with an optional strict-mode sync-enforcement webhook.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `controllerManager.replicas` | int | `1` | Number of operator replicas |
+| `controllerManager.manager.image.repository` | string | `ghcr.io/stakater/public/template-operator-v2` | Container image |
+| `controllerManager.manager.image.tag` | string | `v0.0.8` | Image tag |
+| `certManager.enabled` | bool | `true` | Issue the webhook serving cert via cert-manager (Issuer + Certificate + CA injection). Disable on clusters without cert-manager (e.g. OpenShift with service-ca) |
+| `webhook.certSecretName` | string | `template-operator-v2-webhook-server-cert` | Secret holding the webhook serving cert; must be unique per operator in the namespace |
+| `webhookConfig.annotations` | object | `{}` | Extra annotations on the ValidatingWebhookConfiguration (OpenShift: `service.beta.openshift.io/inject-cabundle: "true"`) |
+| `webhookService.annotations` | object | `{}` | Extra annotations on the webhook Service (OpenShift: `service.beta.openshift.io/serving-cert-secret-name`) |
+| `rbac.additionalRules` | list | `[]` | Extra PolicyRules for the manager ClusterRole — grant access to the kinds your templates render. Reads granted here are effectively available to anyone who can create a TemplateInstance (parameters resolve with the operator’s identity) |
+| `rbac.clusterAdmin.enabled` | bool | `false` | Bind the operator SA to cluster-admin. Insecure; local development only |
+| `kubernetesClusterDomain` | string | `cluster.local` | Kubernetes cluster domain |
+
+> This is a Stakater-managed chart. No public upstream documentation is available.
+
+---
+
 ## Common Patterns
 
 All CRs support standard Helm value fields that are passed through to the underlying chart:

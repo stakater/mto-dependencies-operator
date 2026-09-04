@@ -1,0 +1,62 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-operator-v2-manager-role
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - templates.v2.stakater.com
+  resources:
+  - templateinstances
+  - templates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - templates.v2.stakater.com
+  resources:
+  - templateinstances/finalizers
+  - templates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - templates.v2.stakater.com
+  resources:
+  - templateinstances/status
+  - templates/status
+  verbs:
+  - get
+  - patch
+  - update
+{{- with .Values.rbac.additionalRules }}
+{{- toYaml . | nindent 0 }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: template-operator-v2-manager-rolebinding
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: template-operator-v2-manager-role
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "template-operator-v2.serviceAccountName" . }}'
+  namespace: '{{ .Release.Namespace }}'

@@ -1,0 +1,83 @@
+controllerManager:
+  manager:
+    args:
+      - --leader-elect
+      - --health-probe-bind-address=:8081
+      - --enable-webhooks
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: ghcr.io/stakater/public/template-operator-v2
+      tag: v0.0.8
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  nodeSelector: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  tolerations: []
+  topologySpreadConstraints: []
+imagePullSecrets: []
+kubernetesClusterDomain: cluster.local
+ms:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
+webhookService:
+  annotations: {}
+  ports:
+    - port: 443
+      targetPort: 9443
+  type: ClusterIP
+rbac:
+  # clusterAdmin grants the operator SA the cluster-admin ClusterRole.
+  # WARNING: Insecure. For local development and testing only.
+  # Never enable in production.
+  clusterAdmin:
+    enabled: false
+  # additionalRules appends extra PolicyRule entries to the manager ClusterRole.
+  # Use this to grant the operator access to API groups used by your templates.
+  additionalRules: []
+# certManager controls the cert-manager Issuer/Certificate that issue the
+# webhook serving cert. When enabled, the webhook config is annotated with
+# cert-manager.io/inject-ca-from so cert-manager injects the CA bundle.
+# Disable on clusters without cert-manager (e.g. OpenShift).
+certManager:
+  enabled: true
+# webhookConfig.annotations are merged onto the ValidatingWebhookConfiguration.
+# On OpenShift, set service.beta.openshift.io/inject-cabundle: "true" here so the
+# service-ca operator injects the CA bundle (and set webhookService.annotations'
+# service.beta.openshift.io/serving-cert-secret-name to the webhook.certSecretName
+# value so it issues the matching serving cert).
+webhookConfig:
+  annotations: {}
+# webhook.certSecretName is the Secret that holds the webhook serving cert.
+# The name must be unique per operator in a namespace: the kubebuilder default
+# (webhook-server-cert) collides with other scaffolded operators installed in
+# the same namespace, e.g. finops-operator under MTO.
+webhook:
+  certSecretName: template-operator-v2-webhook-server-cert
+# Extra volumes, volume mounts, and environment variables for the manager container.
+# Use extraVolumeMounts/extraVolumes to inject custom CA bundles, config files, etc.
+# Use extraEnvVars to set additional environment variables (e.g. SSL_CERT_DIR).
+extraVolumeMounts: []
+extraVolumes: []
+extraEnvVars: []

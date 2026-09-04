@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-operator-v2-templateinstance-admin-role
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - templates.v2.stakater.com
+  resources:
+  - templateinstances
+  verbs:
+  - '*'
+- apiGroups:
+  - templates.v2.stakater.com
+  resources:
+  - templateinstances/status
+  verbs:
+  - get

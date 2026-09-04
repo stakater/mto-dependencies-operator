@@ -59,4 +59,11 @@ resources:
   group: dependencies
   kind: FinOpsOperator
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: tenantoperator.stakater.com
+  group: dependencies
+  kind: TemplateOperatorV2
+  version: v1alpha1
 version: "3"
