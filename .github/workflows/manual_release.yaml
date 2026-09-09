@@ -57,7 +57,7 @@ jobs:
     needs: publish-mdo-to-operator-hub
     steps:
       - name: Notify Slack
-        uses: 8398a7/action-slack@v3.16.2
+        uses: 8398a7/action-slack@v3.19.0
         if: always()
         with:
           status: success
@@ -73,7 +73,7 @@ jobs:
 
     steps:
     - name: Notify Slack
-      uses: 8398a7/action-slack@v3.16.2
+      uses: 8398a7/action-slack@v3.19.0
       if: always()
       with:
         status: failure
