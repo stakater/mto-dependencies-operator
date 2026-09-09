@@ -25,6 +25,7 @@ declare -A TEST_NAME_MAP=(
     ["kube-state-metrics"]="test_kube_state_metrics.sh"  # Allow both dash and underscore
     ["postgresql"]="test_postgres.sh"  # Allow alternative naming
     ["opencost"]="test_opencost.sh"
+    ["template-operator-v2"]="test_template_operator_v2.sh"
 )
 
 usage() {

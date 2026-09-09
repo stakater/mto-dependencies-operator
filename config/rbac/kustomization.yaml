@@ -25,6 +25,9 @@ resources:
 - finopsoperator_admin_role.yaml
 - finopsoperator_editor_role.yaml
 - finopsoperator_viewer_role.yaml
+- templateoperatorv2_admin_role.yaml
+- templateoperatorv2_editor_role.yaml
+- templateoperatorv2_viewer_role.yaml
 - dexconfigoperator_admin_role.yaml
 - dexconfigoperator_editor_role.yaml
 - dexconfigoperator_viewer_role.yaml

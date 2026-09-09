@@ -1,0 +1,68 @@
+# The webhook cert chain must stay consistent for ANY release name. The bugs
+# these tests guard were invisible under the collapsing release name
+# "template-operator-v2" (fullname == chart name): a hardcoded issuerRef with a
+# templated Issuer, templated dnsNames with a hardcoded Service, and the
+# kubebuilder default secret name shared with other operators.
+suite: webhook cert chain naming
+release:
+  name: some-release
+  namespace: some-namespace
+templates:
+  - serving-cert.yaml
+  - selfsigned-issuer.yaml
+  - webhook-service.yaml
+  - deployment.yaml
+tests:
+  - it: the Certificate issuerRef matches the Issuer name
+    template: serving-cert.yaml
+    asserts:
+      - equal:
+          path: spec.issuerRef.name
+          value: some-release-template-operator-v2-selfsigned-issuer
+
+  - it: the Issuer carries the name the Certificate references
+    template: selfsigned-issuer.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: some-release-template-operator-v2-selfsigned-issuer
+
+  - it: the Certificate dnsNames match the webhook Service name
+    template: serving-cert.yaml
+    asserts:
+      - contains:
+          path: spec.dnsNames
+          content: template-operator-v2-webhook-service.some-namespace.svc
+      - contains:
+          path: spec.dnsNames
+          content: template-operator-v2-webhook-service.some-namespace.svc.cluster.local
+
+  - it: the webhook Service carries the name the dnsNames reference
+    template: webhook-service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: template-operator-v2-webhook-service
+
+  - it: the Certificate and the deployment agree on the serving-cert secret
+    template: serving-cert.yaml
+    asserts:
+      - equal:
+          path: spec.secretName
+          value: template-operator-v2-webhook-server-cert
+
+  - it: the deployment mounts the serving-cert secret by the same name
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[?(@.name == "cert")].secret.secretName
+          value: template-operator-v2-webhook-server-cert
+
+  - it: the secret name is overridable via webhook.certSecretName
+    set:
+      webhook.certSecretName: my-custom-cert
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[?(@.name == "cert")].secret.secretName
+          value: my-custom-cert

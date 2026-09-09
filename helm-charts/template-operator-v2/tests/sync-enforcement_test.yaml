@@ -1,0 +1,20 @@
+suite: sync-enforcement webhook
+templates:
+  - template-operator-v2-sync-enforcement.yaml
+tests:
+  - it: preserves matchConditions through helmify postprocess
+    # helmify drops .webhooks[].matchConditions during chart generation.
+    # The postprocess step re-injects them from config/webhook/manifests.yaml.
+    # This test guards against regression of that postprocess step.
+    asserts:
+      - exists:
+          path: webhooks[0].matchConditions
+      - lengthEqual:
+          path: webhooks[0].matchConditions
+          count: 1
+      - equal:
+          path: webhooks[0].matchConditions[0].name
+          value: managed-by-template-operator
+      - matchRegex:
+          path: webhooks[0].matchConditions[0].expression
+          pattern: templates\.v2\.stakater\.com/instance

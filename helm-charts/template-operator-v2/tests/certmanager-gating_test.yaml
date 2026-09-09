@@ -1,0 +1,82 @@
+suite: cert-manager / OCP service-ca gating
+# Verifies the webhook serving cert can be sourced either from cert-manager
+# (default) or from the OCP service-ca operator (certManager.enabled=false),
+# both driven by .Values.certManager.enabled in hack/helm/postprocess.sh.
+templates:
+  - template-operator-v2-sync-enforcement.yaml
+  - serving-cert.yaml
+  - selfsigned-issuer.yaml
+  - webhook-service.yaml
+tests:
+  - it: renders the cert-manager Certificate by default
+    template: serving-cert.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Certificate
+
+  - it: renders the cert-manager Issuer by default
+    template: selfsigned-issuer.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Issuer
+
+  - it: uses cert-manager CA injection on the webhook by default
+    template: template-operator-v2-sync-enforcement.yaml
+    asserts:
+      - exists:
+          path: metadata.annotations["cert-manager.io/inject-ca-from"]
+      - notExists:
+          path: metadata.annotations["service.beta.openshift.io/inject-cabundle"]
+
+  - it: drops the Certificate when certManager is disabled
+    set:
+      certManager.enabled: false
+    template: serving-cert.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: drops the Issuer when certManager is disabled
+    set:
+      certManager.enabled: false
+    template: selfsigned-issuer.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: injects no annotations on the webhook when certManager is disabled and none are set
+    set:
+      certManager.enabled: false
+    template: template-operator-v2-sync-enforcement.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations["cert-manager.io/inject-ca-from"]
+      - notExists:
+          path: metadata.annotations["service.beta.openshift.io/inject-cabundle"]
+
+  - it: applies explicit webhookConfig.annotations for OCP service-ca CA injection
+    set:
+      certManager.enabled: false
+      webhookConfig.annotations:
+        service.beta.openshift.io/inject-cabundle: "true"
+    template: template-operator-v2-sync-enforcement.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations["cert-manager.io/inject-ca-from"]
+      - equal:
+          path: metadata.annotations["service.beta.openshift.io/inject-cabundle"]
+          value: "true"
+
+  - it: exposes the OCP serving-cert annotation on the webhook Service
+    set:
+      webhookService.annotations:
+        service.beta.openshift.io/serving-cert-secret-name: template-operator-v2-webhook-server-cert
+    template: webhook-service.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"]
+          value: template-operator-v2-webhook-server-cert

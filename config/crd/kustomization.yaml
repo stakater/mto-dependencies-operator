@@ -9,4 +9,5 @@ resources:
 - bases/dependencies.tenantoperator.stakater.com_opencosts.yaml
 - bases/dependencies.tenantoperator.stakater.com_dexconfigoperators.yaml
 - bases/dependencies.tenantoperator.stakater.com_finopsoperators.yaml
+- bases/dependencies.tenantoperator.stakater.com_templateoperatorv2s.yaml
 # +kubebuilder:scaffold:crdkustomizeresource

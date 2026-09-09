@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-operator-v2-controller-manager-ms
+  labels:
+    control-plane: controller-manager
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.ms.type }}
+  selector:
+    app.kubernetes.io/name: template-operator-v2
+    control-plane: controller-manager
+    {{- include "template-operator-v2.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.ms.ports | toYaml | nindent 2 }}

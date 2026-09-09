@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-operator-v2-webhook-service
+  {{- with .Values.webhookService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.webhookService.type }}
+  selector:
+    control-plane: controller-manager
+    {{- include "template-operator-v2.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.webhookService.ports | toYaml | nindent 2 }}

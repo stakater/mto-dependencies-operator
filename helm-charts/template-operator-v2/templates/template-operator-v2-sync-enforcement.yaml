@@ -1,0 +1,40 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "template-operator-v2.fullname" . }}-template-operator-v2-sync-enforcement
+  {{- if or .Values.certManager.enabled .Values.webhookConfig.annotations }}
+  annotations:
+    {{- if .Values.certManager.enabled }}
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "template-operator-v2.fullname" . }}-serving-cert
+    {{- end }}
+    {{- with .Values.webhookConfig.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  labels:
+  {{- include "template-operator-v2.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: template-operator-v2-webhook-service
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-rendered-resource
+  failurePolicy: Fail
+  name: sync-enforcement.templates.v2.stakater.com
+  rules:
+  - apiGroups:
+    - '*'
+    apiVersions:
+    - '*'
+    operations:
+    - UPDATE
+    - DELETE
+    resources:
+    - '*'
+    scope: '*'
+  matchConditions:
+  - name: managed-by-template-operator
+    expression: "(object != null && has(object.metadata.labels) && 'templates.v2.stakater.com/instance' in object.metadata.labels) || (oldObject != null && has(oldObject.metadata.labels) && 'templates.v2.stakater.com/instance' in oldObject.metadata.labels)"
+  sideEffects: None

@@ -27,4 +27,8 @@
   version: v1alpha1
   kind: FinOpsOperator
   chart: helm-charts/finops-operator
+- group: dependencies.tenantoperator.stakater.com
+  version: v1alpha1
+  kind: TemplateOperatorV2
+  chart: helm-charts/template-operator-v2
 # +kubebuilder:scaffold:watch
