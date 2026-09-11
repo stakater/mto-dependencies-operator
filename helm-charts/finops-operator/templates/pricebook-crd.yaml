@@ -2,21 +2,29 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    helm.sh/resource-policy: keep
     controller-gen.kubebuilder.io/version: v0.18.0
-  name: finopsproviders.finops.stakater.com
+  name: pricebooks.finops.stakater.com
 spec:
   group: finops.stakater.com
   names:
-    kind: FinOpsProvider
-    listKind: FinOpsProviderList
-    plural: finopsproviders
-    singular: finopsprovider
-  scope: Cluster
+    kind: PriceBook
+    listKind: PriceBookList
+    plural: pricebooks
+    singular: pricebook
+  scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.active
+      name: Active
+      type: boolean
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: FinOpsProvider is the Schema for the finopsproviders API.
+        description: PriceBook is the Schema for the pricebooks API
         properties:
           apiVersion:
             description: |-
@@ -36,69 +44,77 @@ spec:
           metadata:
             type: object
           spec:
-            description: |-
-              ProviderOptions holds provider-specific configuration options.
-              Exactly one of AWS, GCP, Azure, or OnPrem must be set.
-              These validations operate on the Go field names (AWS, GCP, Azure, OnPrem).
-              Se https://opencost.io/docs/configuration/ for possible options
-              todo: +kubebuilder:validation:XValidation:rule="has(self.Aws) || has(self.Gcp) || has(self.Azure) || has(self.OnPrem)", message="At least one provider option (awsoptions, gcpoptions, azureoptions, onpremoptions) must be set"
-              todo: +kubebuilder:validation:XValidation:rule="(has(self.Aws) ? 1 : 0) + (has(self.Gcp) ? 1 : 0) + (has(self.Azure) ? 1 : 0) + (has(self.OnPrem) ? 1 : 0) == 1", message="Exactly one provider option (awsoptions, gcpoptions, azureoptions, onpremoptions) must be set"
+            description: PriceBookSpec defines the desired state of PriceBook
             properties:
-              awsoptions:
-                description: AWS specific options.
+              currency:
+                description: The base currency for financial reporting and calculations
+                  (e.g., EUR, USD).
+                pattern: ^[A-Z]{3}$
+                type: string
+              rates:
+                description: Rates used for valuation in 'currency' mode. Defines
+                  cost per unit of resource. Required if valuationMode is 'currency'.
                 properties:
-                  cloudIntegrationSecret:
-                    description: CloudIntegrationSecret is the Azure Subscription
-                      ID.
+                  cpuHour:
+                    description: Cost per vCPU-hour (e.g., 0.031).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
                     type: string
-                  pricingModelSource:
-                    description: |-
-                      PricingModelSource indicates how the pricing model is provided to OpenCost.
-                      e.g., "Pricebook" if derived from PriceBook CRs.
+                  gpuHour:
+                    description: Cost per GPU-hour (e.g., 1.8).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
+                    type: string
+                  networkGiB:
+                    description: Cost per GiB of network data transferred (e.g., 0.09).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
+                    type: string
+                  pvGbHour:
+                    description: Cost per GB-hour of Persistent Volume (e.g., 0.00012).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
+                    type: string
+                  ramGbHour:
+                    description: Cost per GB-hour of RAM (e.g., 0.004).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
+                    type: string
+                  spotCPUHour:
+                    description: Cost per vCPU-hour (e.g., 0.031).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
+                    type: string
+                  spotRAMGbHour:
+                    description: Cost per GB-hour of spotRAM (e.g., 0.004).
+                    pattern: ^([0-9]+(\.[0-9]+)?)?$
                     type: string
                 type: object
-              azureoptions:
-                description: Azure specific options.
-                properties:
-                  cloudIntegrationSecret:
-                    description: CloudIntegrationSecret is the Azure Subscription
-                      ID.
-                    type: string
-                  pricingModelSource:
-                    description: |-
-                      PricingModelSource indicates how the pricing model is provided to OpenCost.
-                      e.g., "Pricebook" if derived from PriceBook CRs.
-                    type: string
-                type: object
-              gcpoptions:
-                description: GCP specific options.
-                properties:
-                  cloudIntegrationSecret:
-                    description: CloudIntegrationSecret is the Azure Subscription
-                      ID.
-                    type: string
-                  pricingModelSource:
-                    description: |-
-                      PricingModelSource indicates how the pricing model is provided to OpenCost.
-                      e.g., "Pricebook" if derived from PriceBook CRs.
-                    type: string
-                type: object
-              onpremoptions:
-                description: OnPrem specific options.
-                properties:
-                  pricingModelSource:
-                    description: |-
-                      PricingModelSource indicates how the pricing model is provided to OpenCost.
-                      e.g., "Pricebook" if derived from PriceBook CRs.
-                    type: string
-                type: object
+              valuationMode:
+                description: The mode of valuation - either 'currency' for direct
+                  monetary rates or 'percent' for weighted scoring.
+                enum:
+                - currency
+                - percent
+                type: string
+            required:
+            - currency
+            - valuationMode
             type: object
           status:
-            description: FinOpsProviderStatus defines the observed state of FinOpsProvider.
+            description: PriceBookStatus defines the observed state of PriceBook
             properties:
+              active:
+                description: |-
+                  Active indicates whether this PriceBook instance is currently designated as the active one
+                  used for pricing calculations. This field is managed by the operator.
+                type: boolean
+              activePricing:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ActivePricing mirrors the OpenCost custom-pricing document (default.json)
+                  this PriceBook has applied to OpenCost. Populated only on the active, ready
+                  PriceBook (the one driving OpenCost); nil on every other PriceBook.
+                  Managed by the operator.
+                type: object
               conditions:
                 description: Conditions represent the latest available observations
-                  of the FinOpsProvider's state.
+                  of the PriceBook's state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -157,30 +173,18 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              lastSyncTime:
-                description: LastSyncTime is the timestamp of the last successful
-                  sync of OpenCost configuration.
-                format: date-time
-                type: string
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
                   recently observed spec.
                 format: int64
                 type: integer
+              ready:
+                description: |-
+                  Ready indicates whether this PriceBook's rates are valid and it is usable
+                  for pricing resolution. Managed by the operator.
+                type: string
             type: object
         type: object
-        x-kubernetes-validations:
-        - message: FinOpsProvider must be named 'default' (singleton).
-          rule: self.metadata.name == 'default'
-        - message: At least one provider option (awsoptions, gcpoptions, azureoptions,
-            onpremoptions) must be set
-          rule: has(self.spec.awsoptions) || has(self.spec.gcpoptions) || has(self.spec.azureoptions)
-            || has(self.spec.onpremoptions)
-        - message: Exactly one provider option (awsoptions, gcpoptions, azureoptions,
-            onpremoptions) must be set
-          rule: '(has(self.spec.awsoptions) ? 1 : 0) + (has(self.spec.gcpoptions)
-            ? 1 : 0) + (has(self.spec.azureoptions) ? 1 : 0) + (has(self.spec.onpremoptions)
-            ? 1 : 0) == 1'
     served: true
     storage: true
     subresources:
