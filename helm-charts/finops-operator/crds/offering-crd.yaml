@@ -161,11 +161,16 @@ spec:
                         type: integer
                       period:
                         description: |-
-                          Period is the tick interval. Its interpretation depends on tickAlignment:
-                            - ActivatedAt: a Go duration string (e.g., "1h", "30m", "24h").
-                            - HourBoundary: an integer number of hours (e.g., "1", "2").
-                            - DayBoundary: an integer number of days (e.g., "1", "7").
-                            - MonthBoundary: an integer number of months (e.g., "1", "3", "12").
+                          Period is the tick interval. It must be greater than zero, and its form
+                          depends on tickAlignment:
+                            - ActivatedAt: a Go duration string (e.g., "30m", "1h", "24h").
+                            - HourBoundary: hours, bare or "h"-suffixed (e.g., "1", "2h"), max 999999.
+                            - DayBoundary: days, bare or "d"-suffixed (e.g., "1", "7d"), max 99999.
+                            - MonthBoundary: months, bare or "mo"-suffixed (e.g., "1", "3mo"), max 999.
+                          The unit suffix is optional, but a suffix belonging to a different
+                          alignment is rejected. status.resolvedPricing republishes this value in
+                          canonical suffixed form.
+                        maxLength: 8
                         type: string
                       priceMicros:
                         description: PriceMicros is the price per tick, in micro-currency
@@ -195,10 +200,15 @@ spec:
                     - tickAlignment
                     type: object
                     x-kubernetes-validations:
-                    - message: period must be a Go duration (e.g. '1h') for ActivatedAt
-                        alignment, or a plain integer for boundary alignments
-                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[0-9]+[hms]$'')
-                        : self.period.matches(''^[0-9]+$'')'
+                    - message: 'period must be a positive count with an optional matching
+                        unit: a Go duration such as ''30m'' or ''1h'' for ActivatedAt,
+                        ''2'' or ''2h'' for HourBoundary (max 999999), ''7'' or ''7d''
+                        for DayBoundary (max 99999), ''3'' or ''3mo'' for MonthBoundary
+                        (max 999)'
+                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[1-9][0-9]{0,5}[hms]$'')
+                        : self.tickAlignment == ''HourBoundary'' ? self.period.matches(''^[1-9][0-9]{0,5}h?$'')
+                        : self.tickAlignment == ''DayBoundary'' ? self.period.matches(''^[1-9][0-9]{0,4}d?$'')
+                        : self.period.matches(''^[1-9][0-9]{0,2}(mo)?$'')'
                 type: object
             required:
             - pricing
@@ -347,11 +357,16 @@ spec:
                         type: integer
                       period:
                         description: |-
-                          Period is the tick interval. Its interpretation depends on tickAlignment:
-                            - ActivatedAt: a Go duration string (e.g., "1h", "30m", "24h").
-                            - HourBoundary: an integer number of hours (e.g., "1", "2").
-                            - DayBoundary: an integer number of days (e.g., "1", "7").
-                            - MonthBoundary: an integer number of months (e.g., "1", "3", "12").
+                          Period is the tick interval. It must be greater than zero, and its form
+                          depends on tickAlignment:
+                            - ActivatedAt: a Go duration string (e.g., "30m", "1h", "24h").
+                            - HourBoundary: hours, bare or "h"-suffixed (e.g., "1", "2h"), max 999999.
+                            - DayBoundary: days, bare or "d"-suffixed (e.g., "1", "7d"), max 99999.
+                            - MonthBoundary: months, bare or "mo"-suffixed (e.g., "1", "3mo"), max 999.
+                          The unit suffix is optional, but a suffix belonging to a different
+                          alignment is rejected. status.resolvedPricing republishes this value in
+                          canonical suffixed form.
+                        maxLength: 8
                         type: string
                       priceMicros:
                         description: PriceMicros is the price per tick, in micro-currency
@@ -381,10 +396,15 @@ spec:
                     - tickAlignment
                     type: object
                     x-kubernetes-validations:
-                    - message: period must be a Go duration (e.g. '1h') for ActivatedAt
-                        alignment, or a plain integer for boundary alignments
-                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[0-9]+[hms]$'')
-                        : self.period.matches(''^[0-9]+$'')'
+                    - message: 'period must be a positive count with an optional matching
+                        unit: a Go duration such as ''30m'' or ''1h'' for ActivatedAt,
+                        ''2'' or ''2h'' for HourBoundary (max 999999), ''7'' or ''7d''
+                        for DayBoundary (max 99999), ''3'' or ''3mo'' for MonthBoundary
+                        (max 999)'
+                      rule: 'self.tickAlignment == ''ActivatedAt'' ? self.period.matches(''^[1-9][0-9]{0,5}[hms]$'')
+                        : self.tickAlignment == ''HourBoundary'' ? self.period.matches(''^[1-9][0-9]{0,5}h?$'')
+                        : self.tickAlignment == ''DayBoundary'' ? self.period.matches(''^[1-9][0-9]{0,4}d?$'')
+                        : self.period.matches(''^[1-9][0-9]{0,2}(mo)?$'')'
                 required:
                 - meters
                 - resolvedAt
