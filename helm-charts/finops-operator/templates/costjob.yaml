@@ -31,4 +31,8 @@ spec:
   {{- if .Values.costJob.httpClientTimeout }}
   httpClientTimeout: {{ .Values.costJob.httpClientTimeout }}
   {{- end }}
+  {{- with .Values.costJob.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
