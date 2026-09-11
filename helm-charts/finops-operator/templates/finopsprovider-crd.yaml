@@ -2,21 +2,22 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    helm.sh/resource-policy: keep
     controller-gen.kubebuilder.io/version: v0.18.0
-  name: localusers.auth.stakater.com
+  name: finopsproviders.finops.stakater.com
 spec:
-  group: auth.stakater.com
+  group: finops.stakater.com
   names:
-    kind: LocalUser
-    listKind: LocalUserList
-    plural: localusers
-    singular: localuser
-  scope: Namespaced
+    kind: FinOpsProvider
+    listKind: FinOpsProviderList
+    plural: finopsproviders
+    singular: finopsprovider
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LocalUser is the Schema for the localusers API.
+        description: FinOpsProvider is the Schema for the finopsproviders API.
         properties:
           apiVersion:
             description: |-
@@ -36,55 +37,69 @@ spec:
           metadata:
             type: object
           spec:
-            description: LocalUserSpec defines the desired state of LocalUser.
+            description: |-
+              ProviderOptions holds provider-specific configuration options.
+              Exactly one of AWS, GCP, Azure, or OnPrem must be set.
+              These validations operate on the Go field names (AWS, GCP, Azure, OnPrem).
+              Se https://opencost.io/docs/configuration/ for possible options
+              todo: +kubebuilder:validation:XValidation:rule="has(self.Aws) || has(self.Gcp) || has(self.Azure) || has(self.OnPrem)", message="At least one provider option (awsoptions, gcpoptions, azureoptions, onpremoptions) must be set"
+              todo: +kubebuilder:validation:XValidation:rule="(has(self.Aws) ? 1 : 0) + (has(self.Gcp) ? 1 : 0) + (has(self.Azure) ? 1 : 0) + (has(self.OnPrem) ? 1 : 0) == 1", message="Exactly one provider option (awsoptions, gcpoptions, azureoptions, onpremoptions) must be set"
             properties:
-              credentialSecretRef:
-                description: |-
-                  CredentialSecretRef references a secret containing the user credentials
-                  If Key is specified, the secret should contain a single key with JSON/YAML data containing:
-                    - username: the user's login username
-                    - email: the user's email address
-                    - password: the bcrypt-hashed password
-                    - groups: (optional) list of groups
-                  If Key is not specified, the secret should contain individual keys:
-                    - username: the user's login username
-                    - email: the user's email address
-                    - password: the bcrypt-hashed password
-                    - groups: (optional) comma-separated list of groups
+              awsoptions:
+                description: AWS specific options.
                 properties:
-                  key:
+                  cloudIntegrationSecret:
+                    description: CloudIntegrationSecret is the Azure Subscription
+                      ID.
+                    type: string
+                  pricingModelSource:
                     description: |-
-                      Key within the secret that contains the data. If empty, defaults to "config"
-                      The data should be base64-encoded JSON that will be unmarshaled
+                      PricingModelSource indicates how the pricing model is provided to OpenCost.
+                      e.g., "Pricebook" if derived from PriceBook CRs.
                     type: string
-                  name:
-                    description: Name of the secret
-                    type: string
-                  namespace:
-                    description: Namespace of the secret. If empty, defaults to the
-                      namespace of the CR
-                    type: string
-                required:
-                - name
                 type: object
-              enabled:
-                default: true
-                description: Enabled determines if this user should be included in
-                  the dex configuration
-                type: boolean
-              userID:
-                description: UserID is a unique identifier for this user
-                type: string
-            required:
-            - credentialSecretRef
-            - userID
+              azureoptions:
+                description: Azure specific options.
+                properties:
+                  cloudIntegrationSecret:
+                    description: CloudIntegrationSecret is the Azure Subscription
+                      ID.
+                    type: string
+                  pricingModelSource:
+                    description: |-
+                      PricingModelSource indicates how the pricing model is provided to OpenCost.
+                      e.g., "Pricebook" if derived from PriceBook CRs.
+                    type: string
+                type: object
+              gcpoptions:
+                description: GCP specific options.
+                properties:
+                  cloudIntegrationSecret:
+                    description: CloudIntegrationSecret is the Azure Subscription
+                      ID.
+                    type: string
+                  pricingModelSource:
+                    description: |-
+                      PricingModelSource indicates how the pricing model is provided to OpenCost.
+                      e.g., "Pricebook" if derived from PriceBook CRs.
+                    type: string
+                type: object
+              onpremoptions:
+                description: OnPrem specific options.
+                properties:
+                  pricingModelSource:
+                    description: |-
+                      PricingModelSource indicates how the pricing model is provided to OpenCost.
+                      e.g., "Pricebook" if derived from PriceBook CRs.
+                    type: string
+                type: object
             type: object
           status:
-            description: LocalUserStatus defines the observed state of LocalUser.
+            description: FinOpsProviderStatus defines the observed state of FinOpsProvider.
             properties:
               conditions:
                 description: Conditions represent the latest available observations
-                  of the local user's current state
+                  of the FinOpsProvider's state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -140,25 +155,33 @@ spec:
                   - type
                   type: object
                 type: array
-              lastUpdated:
-                description: LastUpdated is the timestamp when the local user status
-                  was last updated
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastSyncTime:
+                description: LastSyncTime is the timestamp of the last successful
+                  sync of OpenCost configuration.
                 format: date-time
-                type: string
-              message:
-                description: Message provides human-readable details about the current
-                  state
                 type: string
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
-                  recently observed LocalUser
+                  recently observed spec.
                 format: int64
                 type: integer
-              phase:
-                description: Phase represents the current phase of the local user
-                type: string
             type: object
         type: object
+        x-kubernetes-validations:
+        - message: FinOpsProvider must be named 'default' (singleton).
+          rule: self.metadata.name == 'default'
+        - message: At least one provider option (awsoptions, gcpoptions, azureoptions,
+            onpremoptions) must be set
+          rule: has(self.spec.awsoptions) || has(self.spec.gcpoptions) || has(self.spec.azureoptions)
+            || has(self.spec.onpremoptions)
+        - message: Exactly one provider option (awsoptions, gcpoptions, azureoptions,
+            onpremoptions) must be set
+          rule: '(has(self.spec.awsoptions) ? 1 : 0) + (has(self.spec.gcpoptions)
+            ? 1 : 0) + (has(self.spec.azureoptions) ? 1 : 0) + (has(self.spec.onpremoptions)
+            ? 1 : 0) == 1'
     served: true
     storage: true
     subresources:

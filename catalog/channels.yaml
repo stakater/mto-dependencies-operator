@@ -2,5 +2,6 @@ schema: olm.channel
 package: mto-dependencies-operator
 name: preview
 entries:
-  - name: mto-dependencies-operator.v0.0.12
-    skipRange: '<0.0.12'
+  - name: mto-dependencies-operator.v0.0.14
+    skipRange: mto-dependencies-operator.v0.0.14
+

@@ -24,7 +24,7 @@ endif
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.3)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.3)
-VERSION ?= 0.0.10
+VERSION ?= 0.0.14
 OPERATOR_NAME ?= mto-dependencies-operator
 CATALOG_DIR_PATH ?= catalog
 DOCKER_REPO_BASE ?= ghcr.io/stakater
@@ -118,7 +118,7 @@ help: ## Display this help.
 ##@ Testing
 
 .PHONY: lint
-lint: ## Lint all helm charts by templating them
+lint: lint-no-crds-dir ## Lint all helm charts by templating them
 	@echo "Linting helm charts..."
 	@for chart in helm-charts/*/; do \
 		chart_name=$$(basename $$chart); \
@@ -127,6 +127,19 @@ lint: ## Lint all helm charts by templating them
 		helm lint $$chart || exit 1; \
 	done
 	@echo "✓ All helm charts linted successfully!"
+
+# Helm applies crds/ only on install, so anything parked there is invisible to the
+# upgrades helm-operator performs on every reconcile. Promote them with promote-crds.
+.PHONY: lint-no-crds-dir
+lint-no-crds-dir: ## Fail if any vendored chart still ships a crds/ directory
+	@found=$$(find $(HELM_CHARTS_DIR) -mindepth 2 -maxdepth 2 -type d -name crds); \
+	if [ -n "$$found" ]; then \
+		echo "ERROR: these charts still ship CRDs in crds/, which helm upgrade never applies:"; \
+		echo "$$found" | $(SED) 's/^/  /'; \
+		echo "Move them into templates/ (see the promote-crds helper in the Charts section)."; \
+		exit 1; \
+	fi
+	@echo "✓ No chart ships a crds/ directory"
 
 .PHONY: test
 test:
@@ -440,18 +453,42 @@ update-operator-hub-image-digest: ## Update image digest
 HELM_CHARTS_DIR ?= helm-charts
 
 # finops-operator chart pull configuration
-FINOPS_OPERATOR_VERSION ?= 0.1.3
+FINOPS_OPERATOR_VERSION ?= 0.1.5
 FINOPS_OPERATOR_CHART   ?= oci://ghcr.io/stakater/public/charts/finops-operator
 FINOPS_OPERATOR_IMAGE   ?= ghcr.io/stakater/public/finops-operator
-FINOPS_OPERATOR_TAG     ?= v0.1.3
+FINOPS_OPERATOR_TAG     ?= v0.1.5
 FINOPS_GATEWAY_IMAGE    ?= ghcr.io/stakater/public/finops-gateway
-FINOPS_GATEWAY_TAG      ?= v0.1.3
+FINOPS_GATEWAY_TAG      ?= v0.1.5
 
 # template-operator-v2 chart pull configuration
 TEMPLATE_OPERATOR_V2_VERSION ?= 0.0.8
 TEMPLATE_OPERATOR_V2_CHART   ?= oci://ghcr.io/stakater/public/charts/template-operator-v2
 TEMPLATE_OPERATOR_V2_IMAGE   ?= ghcr.io/stakater/public/template-operator-v2
 TEMPLATE_OPERATOR_V2_TAG     ?= v0.0.8
+
+# Helm applies a chart's crds/ directory only on install, never on upgrade, and
+# helm-operator upgrades an existing release on every reconcile. CRDs left in
+# crds/ would therefore go stale forever once a release exists, so move them into
+# templates/ where every upgrade applies them.
+#   * helm.sh/resource-policy: keep stops an uninstall (CR deletion) from dropping
+#     the CRD and garbage collecting every CR under it.
+#   * Escaping {{ keeps literal Go template examples inside CRD descriptions from
+#     being evaluated by Helm; it is a no-op on files that contain none.
+# $(1) is the chart directory name under $(HELM_CHARTS_DIR).
+define promote-crds
+	@echo "Promoting $(1) CRDs from crds/ to templates/..."
+	@for f in $(HELM_CHARTS_DIR)/$(1)/crds/*.yaml; do \
+		if grep -q "^  annotations:$$" "$$f"; then \
+			$(SED) -i "0,/^  annotations:$$/s||&\n    helm.sh/resource-policy: keep|" "$$f"; \
+		else \
+			$(SED) -i "0,/^metadata:$$/s||&\n  annotations:\n    helm.sh/resource-policy: keep|" "$$f"; \
+		fi; \
+		grep -q "helm.sh/resource-policy: keep" "$$f" || { echo "ERROR: could not annotate $$f"; exit 1; }; \
+		$(SED) -i 's/{{/{{ "{{" }}/g' "$$f"; \
+		mv "$$f" $(HELM_CHARTS_DIR)/$(1)/templates/; \
+	done
+	@rmdir $(HELM_CHARTS_DIR)/$(1)/crds
+endef
 
 .PHONY: resync-charts
 resync-charts: pull-finops-operator pull-template-operator-v2 ## Resync all vendored charts from their registries
@@ -469,6 +506,7 @@ pull-finops-operator: yq ## Pull and postprocess the finops-operator chart
 		$(HELM_CHARTS_DIR)/finops-operator/Chart.yaml
 	@echo "Rewriting image repositories and tags in values.yaml..."
 	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(FINOPS_OPERATOR_IMAGE)" | .controllerManager.manager.image.tag = "$(FINOPS_OPERATOR_TAG)" | .finopsGatewayGateway.finopsGatewayContainer.image.repository = "$(FINOPS_GATEWAY_IMAGE)" | .finopsGatewayGateway.finopsGatewayContainer.image.tag = "$(FINOPS_GATEWAY_TAG)"' $(HELM_CHARTS_DIR)/finops-operator/values.yaml
+	$(call promote-crds,finops-operator)
 	@echo "✓ finops-operator chart resynced"
 
 .PHONY: pull-template-operator-v2
@@ -479,4 +517,5 @@ pull-template-operator-v2: yq ## Pull and postprocess the template-operator-v2 c
 		--untar --untardir $(HELM_CHARTS_DIR)
 	@echo "Rewriting image repository and tag in values.yaml..."
 	$(YQ_BIN) -i '.controllerManager.manager.image.repository = "$(TEMPLATE_OPERATOR_V2_IMAGE)" | .controllerManager.manager.image.tag = "$(TEMPLATE_OPERATOR_V2_TAG)"' $(HELM_CHARTS_DIR)/template-operator-v2/values.yaml
+	$(call promote-crds,template-operator-v2)
 	@echo "✓ template-operator-v2 chart resynced"
