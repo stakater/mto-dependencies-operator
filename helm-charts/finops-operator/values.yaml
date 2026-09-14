@@ -16,7 +16,7 @@ controllerManager:
       opencostDeploymentNamespace: finops-operator-system
     image:
       repository: ghcr.io/stakater/public/finops-operator
-      tag: v0.1.5
+      tag: v0.1.7
     extraEnv: []
   podSecurityContext:
     runAsNonRoot: true
@@ -35,7 +35,7 @@ finopsGatewayGateway:
       port: "8080"
     image:
       repository: ghcr.io/stakater/public/finops-gateway
-      tag: v0.1.5
+      tag: v0.1.6
     extraEnv: []
   replicas: 1
 finopsGatewayService:
@@ -72,7 +72,7 @@ finopsGatewayIngress:
   rules: []
 costJob:
   enabled: false
-  interval: 1m
+  interval: 1h
   databaseInitTimeout: ""
   k8sOperationTimeout: ""
   openCostFetchTimeout: ""
@@ -81,9 +81,12 @@ costJob:
   statusUpdateTimeout: ""
   httpClientTimeout: ""
   resources: {}
+  sharding:
+    namespacesPerShard: 25
+    concurrency: 4
 chargeCollectionJob:
   enabled: false
-  interval: 1m
+  interval: 1h
   databaseInitTimeout: ""
   k8sOperationTimeout: ""
   openCostFetchTimeout: ""

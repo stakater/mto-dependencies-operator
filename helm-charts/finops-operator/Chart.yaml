@@ -1,7 +1,7 @@
 apiVersion: v2
-appVersion: 0.1.5
+appVersion: 0.1.7
 dependencies: []
 description: FinOps Operator Helm Chart
 name: finops-operator
 type: application
-version: 0.1.5
+version: 0.1.7
