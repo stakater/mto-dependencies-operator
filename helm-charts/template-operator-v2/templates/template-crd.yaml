@@ -2,6 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    helm.sh/resource-policy: keep
     controller-gen.kubebuilder.io/version: v0.18.0
   name: templates.templates.v2.stakater.com
 spec:
@@ -68,8 +69,8 @@ spec:
                   that is not set) fails the render; the TemplateInstance reports the
                   missing key in its Rendered condition. For optional values, look up
                   through `index`, which returns an empty value instead of failing:
-                    {{ index .instance.labels "env" | default "dev" }}
-                    {{ if index .instance.labels "env" }} ... {{ end }}
+                    {{ "{{" }} index .instance.labels "env" | default "dev" }}
+                    {{ "{{" }} if index .instance.labels "env" }} ... {{ "{{" }} end }}
                 type: string
               helm:
                 description: |-
