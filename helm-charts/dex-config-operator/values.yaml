@@ -108,3 +108,5 @@ defaultResources:
       secretData: ""
       trustedPeers: []
       logoURL: null
+crdAdoption:
+  image: ghcr.io/stakater/mto-dependencies-operator:v0.0.14

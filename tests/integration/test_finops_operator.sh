@@ -11,6 +11,37 @@ source "$SCRIPT_DIR/../helpers/common.sh"
 TEST_NAME="FinOpsOperator CR Test"
 CR_NAME="finopsoperator-test"
 DEPLOYMENT_NAME="finopsoperator-test"  # This should match the helm chart naming convention
+ADOPTED_CRD="costjobs.finops.stakater.com"
+ADOPTED_CRD_MANIFEST="$SCRIPT_DIR/../../helm-charts/finops-operator/templates/costjob-crd.yaml"
+
+# The chart ships its CRDs in templates/, so Helm only applies them if it owns
+# them. Put an unowned copy on the cluster first -- the state left behind by any
+# release installed before the move out of crds/ -- so the test proves the
+# CRD-adoption hook claims it instead of the release failing to install.
+create_unowned_crd() {
+    log_info "Pre-creating $ADOPTED_CRD without Helm ownership metadata"
+    kubectl apply -f "$ADOPTED_CRD_MANIFEST" > /dev/null
+    kubectl label crd "$ADOPTED_CRD" app.kubernetes.io/managed-by- > /dev/null 2>&1 || true
+    kubectl annotate crd "$ADOPTED_CRD" \
+        meta.helm.sh/release-name- meta.helm.sh/release-namespace- > /dev/null 2>&1 || true
+}
+
+validate_crd_adoption() {
+    local managed_by release_name release_namespace
+    managed_by=$(kubectl get crd "$ADOPTED_CRD" -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}')
+    release_name=$(kubectl get crd "$ADOPTED_CRD" -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-name}')
+    release_namespace=$(kubectl get crd "$ADOPTED_CRD" -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-namespace}')
+
+    if [ "$managed_by" = "Helm" ] && [ "$release_name" = "$CR_NAME" ] && [ "$release_namespace" = "$NAMESPACE" ]; then
+        log_success "$ADOPTED_CRD adopted by release $release_name in $release_namespace"
+        return 0
+    fi
+
+    log_error "$ADOPTED_CRD was not adopted (managed-by='$managed_by', release='$release_name/$release_namespace')"
+    kubectl get crd "$ADOPTED_CRD" -o jsonpath='{.metadata.labels}{"\n"}{.metadata.annotations}{"\n"}' || true
+    kubectl logs -n "$NAMESPACE" "job/$CR_NAME-crd-adoption" || true
+    return 1
+}
 
 test_finopsoperator_cr() {
     local start_time
@@ -34,6 +65,8 @@ test_finopsoperator_cr() {
   --set prometheus-pushgateway.enabled=false \
   --set alertmanager.enabled=false \
   -f https://raw.githubusercontent.com/finopsoperator/finopsoperator/develop/kubernetes/prometheus/extraScrapeConfigs.yaml
+
+    create_unowned_crd
 
     # Apply the FinOpsOperator CR (using collector data source, no Prometheus dependency)
     log_info "Applying FinOpsOperator Custom Resource"
@@ -85,6 +118,12 @@ test_finopsoperator_cr() {
     # Validate the deployment has expected properties
     log_info "Validating FinOpsOperator deployment properties"
     if ! validate_resource "deployment" "$DEPLOYMENT_NAME" "app.kubernetes.io/name=finopsoperator"; then
+        return 1
+    fi
+
+    # Validate the CRD-adoption hook claimed the unowned CRD for this release
+    log_info "Validating CRD adoption"
+    if ! validate_crd_adoption; then
         return 1
     fi
 
@@ -181,6 +220,10 @@ cleanup_finopsoperator_test() {
 
     # Delete the Prometheus CR
     delete_cr_and_wait "prometheus" "$PROMETHEUS_CR_NAME" || true
+
+    # The chart annotates its CRDs with helm.sh/resource-policy: keep, so drop the
+    # one this test pre-created to leave a repeat run the same starting state
+    kubectl delete crd "$ADOPTED_CRD" --ignore-not-found || true
 
     # Clean up the test namespace
     cleanup_test_namespace || true
