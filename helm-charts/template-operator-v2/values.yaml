@@ -81,3 +81,5 @@ webhook:
 extraVolumeMounts: []
 extraVolumes: []
 extraEnvVars: []
+crdAdoption:
+  image: ghcr.io/stakater/mto-dependencies-operator:v0.0.14

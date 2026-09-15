@@ -118,3 +118,5 @@ mdoDependencies:
     username: finopsuser
     password: superfinopspassword1234
     database: finopsdb
+crdAdoption:
+  image: ghcr.io/stakater/mto-dependencies-operator:v0.0.14
