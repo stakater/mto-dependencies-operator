@@ -6,6 +6,13 @@ Helm refuses to apply a resource it does not own, so CRDs created before that
 move fail every upgrade with "invalid ownership metadata". This hook stamps the
 Helm ownership label and annotations onto them first, so Helm adopts them.
 
+The image needs sh and curl, and a numeric non-root USER so that runAsNonRoot
+can be verified without pinning a UID -- a pinned UID is rejected by OpenShift's
+restricted-v2 SCC, which assigns one from the namespace range instead.
+
+The hook runs in the release namespace, so a private image needs a pull secret
+there. Set crdAdoption.imagePullSecrets, or the chart-wide imagePullSecrets.
+
 Set crdAdoption.enabled to false to skip it.
 */ -}}
 {{- $adoption := .Values.crdAdoption | default dict -}}
@@ -72,6 +79,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}-crd-adoption
       securityContext:
         runAsNonRoot: true
+      imagePullSecrets: {{ $adoption.imagePullSecrets | default .Values.imagePullSecrets | default list | toJson }}
       containers:
         - name: adopt
           image: {{ $adoption.image | default "ghcr.io/stakater/mto-dependencies-operator:v0.0.14" | quote }}

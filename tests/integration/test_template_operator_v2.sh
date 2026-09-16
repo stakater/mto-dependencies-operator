@@ -41,6 +41,12 @@ test_templateoperatorv2_cr() {
         return 1
     fi
 
+    # This chart ships CRDs, so its pre-install hook starts a pod in this
+    # namespace running the operator image. That image is private and the
+    # namespace has no pull secret of its own, so give it one. The fixture
+    # names it under spec.imagePullSecrets for the job to pick up.
+    create_pull_secret || true
+
     # Apply the TemplateOperatorV2 CR
     log_info "Applying TemplateOperatorV2 Custom Resource"
     if ! apply_and_wait "$SCRIPT_DIR/../fixtures/template-operator-v2-test.yaml" "templateoperatorv2" "$CR_NAME"; then

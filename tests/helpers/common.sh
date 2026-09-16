@@ -66,6 +66,28 @@ create_test_namespace() {
     fi
 }
 
+# Create a registry pull secret in the test namespace.
+#
+# Only the charts whose CRD-adoption hook runs the operator image need this: the
+# hook starts a pod in the test namespace, and that namespace has no pull secret
+# of its own. Returns 1 when no credentials are in the environment, so a local
+# run against a kind-loaded image just skips the override.
+PULL_SECRET_NAME="${PULL_SECRET_NAME:-saap-dockerconfigjson}"
+
+create_pull_secret() {
+    if [ -z "${GHCR_USERNAME:-}" ] || [ -z "${GHCR_TOKEN:-}" ]; then
+        log_info "GHCR_USERNAME/GHCR_TOKEN not set, skipping pull secret"
+        return 1
+    fi
+
+    log_info "Creating pull secret $PULL_SECRET_NAME in $NAMESPACE"
+    kubectl -n "$NAMESPACE" create secret docker-registry "$PULL_SECRET_NAME" \
+        --docker-server=ghcr.io \
+        --docker-username="$GHCR_USERNAME" \
+        --docker-password="$GHCR_TOKEN" \
+        --dry-run=client -o yaml | kubectl apply -f -
+}
+
 # Clean up test namespace
 cleanup_test_namespace() {
     log_info "Cleaning up namespace $NAMESPACE"

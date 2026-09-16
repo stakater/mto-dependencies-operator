@@ -92,10 +92,15 @@ CONTAINER_TOOL ?= docker
 IMG ?= $(IMAGE_TAG_BASE):v$(VERSION)$(GIT_TAG)
 
 # The CRD-adoption hook job reuses the operator image -- it only needs sh and
-# curl, both of which ubi-minimal ships, so there is no extra image to mirror.
-# Stamped into each chart's values.yaml by gen-crd-adoption-jobs; rerun that
-# target after a VERSION bump so the charts point at the matching operator tag.
-CRD_ADOPTION_IMAGE ?= $(IMAGE_TAG_BASE):v$(VERSION)
+# curl, both of which ubi-minimal ships, and its numeric USER 1001 satisfies
+# runAsNonRoot without pinning a UID.
+#
+# It tracks IMG rather than a fixed tag, and docker-build stamps it into each
+# chart before the charts are copied into the image. That way the hook always
+# pulls the very image it ships inside, so snapshot builds work without a
+# published v$(VERSION) and a release build points at its own release tag.
+# Because the stamp happens at build time, lint-crd-adoption-jobs ignores it.
+CRD_ADOPTION_IMAGE ?= $(IMG)
 CRD_ADOPTION_GEN := ./hack/gen-crd-adoption-jobs.sh
 
 # Image URL to use all building/pushing image targets
@@ -203,7 +208,7 @@ run: helm-operator ## Run against the configured Kubernetes cluster in ~/.kube/c
 	$(HELM_OPERATOR) run
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
+docker-build: gen-crd-adoption-jobs ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} . --build-arg VERSION=${VERSION} --build-arg RELEASE=${RELEASE}
 
 .PHONY: docker-push

@@ -40,6 +40,16 @@ crd_names() {
     done | sort -u
 }
 
+# strip_image -- blank the default image on stdin's image line.
+#
+# docker-build stamps the image from IMG, so the committed value is whatever the
+# last build used and carries no meaning. Comparing it would fail the check on
+# every snapshot build, where IMG has a -SNAPSHOT-<sha> suffix. Everything else
+# in the file, including the CRD list, is still compared.
+strip_image() {
+    sed '/^          image: /s#| default "[^"]*"#| default "IMAGE"#'
+}
+
 # render <crd-name>... -- the job manifest, on stdout.
 render() {
     cat <<'HEADER'
@@ -50,6 +60,13 @@ This chart ships its CRDs in templates/ so that every helm upgrade applies them.
 Helm refuses to apply a resource it does not own, so CRDs created before that
 move fail every upgrade with "invalid ownership metadata". This hook stamps the
 Helm ownership label and annotations onto them first, so Helm adopts them.
+
+The image needs sh and curl, and a numeric non-root USER so that runAsNonRoot
+can be verified without pinning a UID -- a pinned UID is rejected by OpenShift's
+restricted-v2 SCC, which assigns one from the namespace range instead.
+
+The hook runs in the release namespace, so a private image needs a pull secret
+there. Set crdAdoption.imagePullSecrets, or the chart-wide imagePullSecrets.
 
 Set crdAdoption.enabled to false to skip it.
 */ -}}
@@ -117,6 +134,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}-crd-adoption
       securityContext:
         runAsNonRoot: true
+      imagePullSecrets: {{ $adoption.imagePullSecrets | default .Values.imagePullSecrets | default list | toJson }}
       containers:
         - name: adopt
           image: {{ $adoption.image | default "IMAGE_PLACEHOLDER" | quote }}
@@ -210,7 +228,8 @@ for chart in "$charts_dir"/*/; do
         if [ ! -e "$job_path" ]; then
             echo "  $chart_name: missing templates/$JOB_FILE"
             stale=1
-        elif ! diff -u "$job_path" <(printf '%s\n' "$rendered") > /dev/null; then
+        elif ! diff -u <(strip_image < "$job_path") \
+                       <(printf '%s\n' "$rendered" | strip_image) > /dev/null; then
             echo "  $chart_name: templates/$JOB_FILE is out of date"
             stale=1
         fi

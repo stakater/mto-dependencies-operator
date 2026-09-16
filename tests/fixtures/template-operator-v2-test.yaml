@@ -3,6 +3,10 @@ kind: TemplateOperatorV2
 metadata:
   name: templateoperatorv2-test
 spec:
+  # The CRD-adoption pre-install hook runs the operator image, which is
+  # private, and this namespace is not the operator's own.
+  imagePullSecrets:
+    - name: saap-dockerconfigjson
   controllerManager:
     manager:
       args:
