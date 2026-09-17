@@ -104,7 +104,7 @@ CRD_ADOPTION_IMAGE ?= $(IMG)
 CRD_ADOPTION_GEN := ./hack/gen-crd-adoption-jobs.sh
 
 # Image URL to use all building/pushing image targets
-IMAGE_DIGEST ?= sha256:4ea1f6ba20818e8db99b42a23d6dd8826f7ef1634c9c613f34a2dbb13e1628af
+IMAGE_DIGEST ?= sha256:31ffb0b303185f64d16e3e40674700c504ad52e961828a98110cf96658b1cd0a
 OPERATOR_HUB_IMG ?= $(OPERATOR_HUB_IMAGE_TAG_BASE)@$(IMAGE_DIGEST)
 
 .PHONY: all
