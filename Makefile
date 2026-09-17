@@ -91,6 +91,18 @@ CONTAINER_TOOL ?= docker
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):v$(VERSION)$(GIT_TAG)
 
+# The CRD-adoption hook job reuses the operator image -- it only needs sh and
+# curl, both of which ubi-minimal ships, and its numeric USER 1001 satisfies
+# runAsNonRoot without pinning a UID.
+#
+# It tracks IMG rather than a fixed tag, and docker-build stamps it into each
+# chart before the charts are copied into the image. That way the hook always
+# pulls the very image it ships inside, so snapshot builds work without a
+# published v$(VERSION) and a release build points at its own release tag.
+# Because the stamp happens at build time, lint-crd-adoption-jobs ignores it.
+CRD_ADOPTION_IMAGE ?= $(IMG)
+CRD_ADOPTION_GEN := ./hack/gen-crd-adoption-jobs.sh
+
 # Image URL to use all building/pushing image targets
 IMAGE_DIGEST ?= sha256:aacb6bda77f58aa2df835e337a86a5a3461b4c633dd148c262b1faecb18002fb
 OPERATOR_HUB_IMG ?= $(OPERATOR_HUB_IMAGE_TAG_BASE)@$(IMAGE_DIGEST)
@@ -118,7 +130,7 @@ help: ## Display this help.
 ##@ Testing
 
 .PHONY: lint
-lint: lint-no-crds-dir ## Lint all helm charts by templating them
+lint: lint-no-crds-dir lint-crd-adoption-jobs ## Lint all helm charts by templating them
 	@echo "Linting helm charts..."
 	@for chart in helm-charts/*/; do \
 		chart_name=$$(basename $$chart); \
@@ -140,6 +152,14 @@ lint-no-crds-dir: ## Fail if any vendored chart still ships a crds/ directory
 		exit 1; \
 	fi
 	@echo "✓ No chart ships a crds/ directory"
+
+# CRDs in templates/ are only applicable once Helm owns them; the adoption hook
+# job makes that true. A chart resync wipes hand-added templates, so the job is
+# generated -- this check fails if a chart's copy is missing or out of date.
+.PHONY: lint-crd-adoption-jobs
+lint-crd-adoption-jobs: yq ## Fail if any chart's generated CRD-adoption job is stale
+	@$(CRD_ADOPTION_GEN) --check $(HELM_CHARTS_DIR) $(CRD_ADOPTION_IMAGE) $(YQ_BIN)
+	@echo "✓ CRD-adoption jobs are up to date"
 
 .PHONY: test
 test:
@@ -188,7 +208,7 @@ run: helm-operator ## Run against the configured Kubernetes cluster in ~/.kube/c
 	$(HELM_OPERATOR) run
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
+docker-build: gen-crd-adoption-jobs ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} . --build-arg VERSION=${VERSION} --build-arg RELEASE=${RELEASE}
 
 .PHONY: docker-push
@@ -488,7 +508,17 @@ define promote-crds
 		mv "$$f" $(HELM_CHARTS_DIR)/$(1)/templates/; \
 	done
 	@rmdir $(HELM_CHARTS_DIR)/$(1)/crds
+	@$(MAKE) --no-print-directory gen-crd-adoption-jobs
 endef
+
+# CRDs in templates/ are only applied if Helm owns them, and ones created before
+# the move are not owned by anything. Each chart that ships CRDs therefore gets a
+# pre-install/pre-upgrade hook job that stamps the Helm ownership metadata onto
+# them. The job is generated from the CRDs the chart actually ships, so a resync
+# that adds or drops a CRD is picked up automatically.
+.PHONY: gen-crd-adoption-jobs
+gen-crd-adoption-jobs: yq ## Regenerate the CRD-adoption hook job in every chart that ships CRDs
+	@$(CRD_ADOPTION_GEN) $(HELM_CHARTS_DIR) $(CRD_ADOPTION_IMAGE) $(YQ_BIN)
 
 .PHONY: resync-charts
 resync-charts: pull-finops-operator pull-template-operator-v2 ## Resync all vendored charts from their registries

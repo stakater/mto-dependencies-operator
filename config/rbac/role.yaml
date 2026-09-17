@@ -40,6 +40,48 @@ rules:
       - patch
       - update
       - watch
+  # Charts that ship CRDs run a pre-install/pre-upgrade hook job that stamps the
+  # Helm ownership metadata onto them, so Helm adopts CRDs created before the
+  # move out of crds/ instead of failing the upgrade. The job needs its own
+  # ServiceAccount and a ClusterRole granting it patch on CRDs, all of which the
+  # operator creates on the release's behalf.
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ##
   ## Rules for dependencies.tenantoperator.stakater.com/v1alpha1, Kind: Dex
