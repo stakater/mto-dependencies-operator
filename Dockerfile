@@ -21,7 +21,7 @@ RUN echo "${USER_NAME}:x:${USER_UID}:0:${USER_NAME} user:${HOME}:/sbin/nologin" 
 
 
 RUN mkdir -p ${HOME} \
- && curl -sSLo ${HOME}/helm-operator https://github.com/operator-framework/operator-sdk/releases/download/v1.42.0/helm-operator_linux_amd64 \
+ && curl -sSLo ${HOME}/helm-operator https://github.com/operator-framework/operator-sdk/releases/download/v1.42.3/helm-operator_linux_amd64 \
  && chmod +x ${HOME}/helm-operator \
  && mv ${HOME}/helm-operator /usr/local/bin/helm-operator
 
