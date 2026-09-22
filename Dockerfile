@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1790074235
 
 ARG VERSION
 ARG RELEASE=1
