@@ -86,28 +86,23 @@ If a release is stuck because the reconcile already failed, the operator retries
 
 Clusters installing these dependencies for the first time need nothing.
 
-## The adoption hook
+## Automatic adoption
 
-The manual script above is only needed on clusters upgraded before the hook shipped. Each chart that ships CRDs now carries `templates/crd-adoption-job.yaml`, a `pre-install,pre-upgrade` hook that stamps the same ownership metadata before Helm renders the release.
+The manual script above is only needed for CRs whose names differ from the ones MTO creates. For those, the `adopt-crds` initContainer on the operator deployment ([config/manager/manager.yaml](../config/manager/manager.yaml)) stamps the same ownership metadata on every pod start. It finishes before helm-operator starts, so before any install or upgrade runs Helm's ownership check.
 
-The job is generated, never hand edited. `make gen-crd-adoption-jobs` writes it from the CRDs a chart ships, `make lint-crd-adoption-jobs` fails if a copy is stale, and `CRD_ADOPTION_IMAGE` in the Makefile sets the image it runs.
+It uses a fixed map of release name to CRD, matching the CR names MTO creates, with the operator's own namespace as the release namespace:
 
-That image is the operator image. It needs only `sh` and `curl`, and its numeric `USER 1001` is what lets `runAsNonRoot` be verified without pinning a UID -- pinning one would be rejected by OpenShift's `restricted-v2` SCC, which assigns a UID from the namespace range instead.
+| Release | CRDs |
+|---------|------|
+| `dex-config-operator` | `.auth.stakater.com` |
+| `tenant-operator-finops` | `.finops.stakater.com` |
+| `tenant-operator-template-operator-v2` | `.templates.v2.stakater.com` |
 
-Because the hook starts a pod in the release namespace, a private image needs a pull secret *in that namespace*. A secret sitting elsewhere in the cluster is not enough, and neither is one in the namespace alone: Kubernetes only uses credentials named by the pod or its ServiceAccount. Without them the pod sits in `ImagePullBackOff` until `activeDeadlineSeconds` expires and the release fails pre-install with `job <release>-crd-adoption failed: DeadlineExceeded`.
+CRDs not installed yet are skipped. Any other API error fails the init container, so the pod restarts and retries.
 
-`CRD_ADOPTION_IMAGE` tracks `IMG`, and `docker-build` regenerates the charts before the Dockerfile copies `helm-charts/` into the image. So the hook always pulls the exact image it ships inside: a snapshot build bakes its own `-SNAPSHOT-<sha>` tag, and a release build bakes its release tag. Nothing has to wait for `v$(VERSION)` to be published.
+A Helm `pre-install,pre-upgrade` hook cannot do this job: helm-operator checks ownership while building the release, before any hook runs, so the hook never fires in time.
 
-Two consequences follow. The `crdAdoption.image` in a committed `values.yaml` is only whatever the last local build stamped, so `make lint-crd-adoption-jobs` deliberately ignores that line while still comparing the CRD list and everything else. And `make docker-build` leaves those three files modified in your working tree; rerun `make gen-crd-adoption-jobs` with no `IMG` set to restore them.
-
-Per release overrides live under `crdAdoption` in the chart values:
-
-| Key | Default | Purpose |
-|-----|---------|---------|
-| `enabled` | `true` | Set to `false` to skip the hook |
-| `image` | the operator image, stamped from `IMG` at build time | Image to run, needs only `sh` and `curl` |
-| `imagePullPolicy` | `IfNotPresent` | |
-| `imagePullSecrets` | falls back to the chart-wide `imagePullSecrets` | Credentials for a private image, needed in the release namespace |
+A chart resync that adds a CRD needs no entry here. A new CRD was never created unowned, so Helm creates and owns it.
 
 ## Adding or resyncing a chart
 
