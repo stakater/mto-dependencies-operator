@@ -57,6 +57,64 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      # Charts ship CRDs in templates/, and Helm refuses to upgrade over a CRD it does
+      # not own. This stamps Helm ownership onto CRDs left by older installs. It runs
+      # before helm-operator starts, so before any release is installed or upgraded.
+      # Release names are the fixed CR names MTO creates, in this namespace.
+      initContainers:
+      - name: adopt-crds
+        image: controller:latest
+        env:
+        - name: RELEASE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -eu
+          sa=/var/run/secrets/kubernetes.io/serviceaccount
+          api=https://kubernetes.default.svc/apis/apiextensions.k8s.io/v1/customresourcedefinitions
+          while read -r release crd; do
+            patch=$(printf \
+              '{"metadata":{"labels":{"app.kubernetes.io/managed-by":"Helm"},"annotations":{"meta.helm.sh/release-name":"%s","meta.helm.sh/release-namespace":"%s"}}}' \
+              "$release" "$RELEASE_NAMESPACE")
+            code=$(curl -sS -o /tmp/response -w '%{http_code}' \
+              --cacert "$sa/ca.crt" \
+              -H "Authorization: Bearer $(cat "$sa/token")" \
+              -H 'Content-Type: application/merge-patch+json' \
+              -X PATCH "$api/$crd" --data "$patch")
+            case "$code" in
+              200) echo "adopted $crd into $release" ;;
+              404) echo "skipped $crd (not installed yet)" ;;
+              *) echo "failed to adopt $crd (HTTP $code)"; cat /tmp/response; exit 1 ;;
+            esac
+          done <<'EOF'
+          dex-config-operator clients.auth.stakater.com
+          dex-config-operator connectors.auth.stakater.com
+          dex-config-operator dexconfigs.auth.stakater.com
+          dex-config-operator localusers.auth.stakater.com
+          tenant-operator-finops costjobs.finops.stakater.com
+          tenant-operator-finops finopsproviders.finops.stakater.com
+          tenant-operator-finops offerings.finops.stakater.com
+          tenant-operator-finops pricebooks.finops.stakater.com
+          tenant-operator-finops subscriptions.finops.stakater.com
+          tenant-operator-template-operator-v2 templateinstances.templates.v2.stakater.com
+          tenant-operator-template-operator-v2 templates.templates.v2.stakater.com
+          EOF
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        resources:
+          limits:
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
       containers:
       - args:
           - --leader-elect
