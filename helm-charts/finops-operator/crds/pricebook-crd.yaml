@@ -85,11 +85,11 @@ spec:
                     type: string
                 type: object
               valuationMode:
-                description: The mode of valuation - either 'currency' for direct
-                  monetary rates or 'percent' for weighted scoring.
+                description: |-
+                  The mode of valuation. Only 'currency' (direct monetary rates) is accepted.
+                  'percent' was removed; books already stored with it are ignored for pricing.
                 enum:
                 - currency
-                - percent
                 type: string
             required:
             - currency

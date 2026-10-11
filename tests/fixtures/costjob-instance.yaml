@@ -1,0 +1,7 @@
+# A customer CostJob. It must survive the operator upgrading its CRD.
+apiVersion: finops.stakater.com/v1alpha1
+kind: CostJob
+metadata:
+  name: customer-costjob
+spec:
+  interval: 1h

@@ -69,8 +69,8 @@ spec:
                   that is not set) fails the render; the TemplateInstance reports the
                   missing key in its Rendered condition. For optional values, look up
                   through `index`, which returns an empty value instead of failing:
-                    {{ "{{" }} index .instance.labels "env" | default "dev" }}
-                    {{ "{{" }} if index .instance.labels "env" }} ... {{ "{{" }} end }}
+                    {{ index .instance.labels "env" | default "dev" }}
+                    {{ if index .instance.labels "env" }} ... {{ end }}
                 type: string
               helm:
                 description: |-

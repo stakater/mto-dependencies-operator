@@ -1,0 +1,11 @@
+# Minimal FinOpsOperator. The test asserts on the Helm release, not on the
+# workload it renders. cert-manager is off because the test cluster has no
+# cert-manager, and Helm refuses a manifest with unknown kinds before it gets
+# to the CRDs.
+apiVersion: dependencies.tenantoperator.stakater.com/v1alpha1
+kind: FinOpsOperator
+metadata:
+  name: crd-upgrade-test
+spec:
+  certManager:
+    enabled: false
