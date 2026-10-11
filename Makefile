@@ -95,6 +95,12 @@ IMG ?= $(IMAGE_TAG_BASE):v$(VERSION)$(GIT_TAG)
 IMAGE_DIGEST ?= sha256:bd39e013b0303ff513adcb61bc535b264aefa33b1fed37f4cc04ade395d6b290
 OPERATOR_HUB_IMG ?= $(OPERATOR_HUB_IMAGE_TAG_BASE)@$(IMAGE_DIGEST)
 
+# Image the bundle's CSV runs. A release bundle pins the certified digest. A
+# snapshot bundle (GIT_TAG set, as on PR builds) must run the snapshot image it
+# was built with, or installing it from a PR catalog runs the last release's
+# image under the new deployment spec.
+BUNDLE_IMG_REF ?= $(if $(GIT_TAG),$(IMG),$(OPERATOR_HUB_IMG))
+
 .PHONY: all
 all: docker-build
 
@@ -348,7 +354,7 @@ SUPPORTED_OPENSHIFT_VERSION_ANNOTATION ?= com.redhat.openshift.versions: 'v4.12'
 .PHONY: bundle
 bundle: kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_HUB_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(BUNDLE_IMG_REF)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(SED) -i '/name: $(CSV_NAME)/i\    $(OLM_SKIP_RANGE_ANNOTATION)' $(CSV_FILE_PATH)
 	printf "\n  $(SUPPORTED_OPENSHIFT_VERSION_ANNOTATION)\n" >> $(ANNOTATIONS_FILE_PATH)
