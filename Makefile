@@ -92,7 +92,7 @@ CONTAINER_TOOL ?= docker
 IMG ?= $(IMAGE_TAG_BASE):v$(VERSION)$(GIT_TAG)
 
 # Image URL to use all building/pushing image targets
-IMAGE_DIGEST ?= sha256:bd39e013b0303ff513adcb61bc535b264aefa33b1fed37f4cc04ade395d6b290
+IMAGE_DIGEST ?= sha256:d178824a98509ee4b739a814727fd6695bdf06fcc9e37d5e5cb76198e58ea075
 OPERATOR_HUB_IMG ?= $(OPERATOR_HUB_IMAGE_TAG_BASE)@$(IMAGE_DIGEST)
 
 # Image the bundle's CSV runs. A release bundle pins the certified digest. A
