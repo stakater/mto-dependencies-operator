@@ -48,6 +48,7 @@ All CRs use the API group `dependencies.tenantoperator.stakater.com/v1alpha1`.
 | [Deploying OpenCost](docs/deploying-opencost.md) | Deploy cost monitoring |
 | [Deploying DexConfigOperator](docs/deploying-dex-config-operator.md) | Deploy dynamic Dex configuration management |
 | [Deploying FinOps Operator](docs/deploying-finops-operator.md) | Deploy MTO cost management |
+| [Upgrading CRDs](docs/upgrading-crds.md) | How vendored chart CRDs are kept current and why Helm does not own them |
 
 ## Quick Start
 
@@ -191,6 +192,57 @@ make docker-push IMG=your-registry/mto-dependencies-operator:latest
 # Deploy to cluster
 make deploy IMG=your-registry/mto-dependencies-operator:latest
 ```
+
+### Validating a PR build on an OpenShift cluster
+
+Every PR build pushes a catalog image, `ghcr.io/stakater/mto-dependencies-operator-catalog:v<VERSION>-SNAPSHOT-PR-<N>-<SHA>`, that serves the PR bundle in channel `alpha`. Use it to upgrade a cluster that already runs the released operator and MTO through OLM, which is the state every customer upgrades from.
+
+```bash
+export NS=multi-tenant-operator
+export CATALOG_IMG=ghcr.io/stakater/mto-dependencies-operator-catalog:v0.0.16-SNAPSHOT-PR-37-4db97dc0
+
+# 1. Where OLM put the released operator. On a cluster where MTO was installed
+#    first, OLM resolves it next to MTO; on a cluster where it was installed
+#    first, it sits in openshift-operators.
+oc get sub,csv -A | grep mto-dependencies
+export SUB=$(oc -n $NS get sub -o name | grep mto-dependencies | cut -d/ -f2)
+
+# 2. Make the released operator create the releases whose CRDs matter: an
+#    IntegrationConfig with components.console and components.showback enabled.
+#    Both CRs must reach Deployed=True before the upgrade.
+oc get finopsoperators,dexconfigoperators -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,DEPLOYED:'.status.conditions[?(@.type=="Deployed")].status',FAILED:'.status.conditions[?(@.type=="ReleaseFailed")].reason'
+
+# 3. Baseline. CRD UIDs and instance counts must be identical after the upgrade.
+oc get crd -o custom-columns=NAME:.metadata.name,UID:.metadata.uid | grep -E 'finops.stakater|auth.stakater' | tee /tmp/crds-before
+oc get costjobs,clients.auth.stakater.com -A --no-headers | wc -l
+
+# 4. Upgrade to the PR build.
+oc apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: mdo-snapshot
+  namespace: $NS
+spec:
+  sourceType: grpc
+  image: $CATALOG_IMG
+  secrets: [saap-dockerconfigjson]
+EOF
+oc -n $NS get catalogsource mdo-snapshot -o jsonpath='{.status.connectionState.lastObservedState}{"\n"}'   # READY
+oc -n $NS patch sub $SUB --type merge -p "{\"spec\":{\"source\":\"mdo-snapshot\",\"sourceNamespace\":\"$NS\",\"channel\":\"alpha\"}}"
+oc -n $NS get csv -w | grep mto-dependencies   # until the PR version is Succeeded
+
+# 5. Verify.
+oc -n $NS logs deploy/mto-dependencies-operator-controller-manager -c apply-crds
+oc -n $NS logs deploy/mto-dependencies-operator-controller-manager -c manager | grep -i 'skipping delete'
+oc get finopsoperators,dexconfigoperators -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,DEPLOYED:'.status.conditions[?(@.type=="Deployed")].status',FAILED:'.status.conditions[?(@.type=="ReleaseFailed")].reason'
+oc get crd -o custom-columns=NAME:.metadata.name,UID:.metadata.uid | grep -E 'finops.stakater|auth.stakater' | diff /tmp/crds-before -
+oc get costjobs,clients.auth.stakater.com -A --no-headers | wc -l
+```
+
+Expected in step 5: `updated` for every finops and dex CRD and `skipped template-operator-v2`, one `Skipping delete ... due to annotation` per CRD on the first reconcile, both CRs `Deployed=True` with no `ReleaseFailed`, an empty diff, and the same instance count. See [Upgrading CRDs](docs/upgrading-crds.md) for why each of these matters.
+
+OLM never downgrades, so going back to the released operator means deleting the Subscription and the PR CSV, deleting the `mdo-snapshot` CatalogSource, and reinstalling from `certified-operators`. The CRs and their releases are untouched by that.
 
 ## Configuration
 
