@@ -75,6 +75,12 @@ tests/
 - Verifies service and configmap creation
 - Tests FinOps Operator metrics and health endpoints
 
+### 7. CRD Upgrade Test (`test_crd_upgrade.sh`)
+- Pre-creates a stale `costjobs.finops.stakater.com` CRD, an instance under it, and a FinOpsOperator CR
+- Restarts the operator so its pod starts with the CRD and CR already present
+- Checks the release deploys and that no CRD was applied for a chart without a CR
+- Checks the instance survived and the CRD carries the current schema
+
 ## Prerequisites
 
 Before running the tests, ensure you have:

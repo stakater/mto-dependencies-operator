@@ -45,6 +45,10 @@ spec:
               SubscriptionSpec defines the desired state of Subscription.
               A Subscription creates a binding to an Offering, starting the clock and instantiating the offering.
               Effectively it starts consuming the cost-driving entity from a billing perspective.
+
+              offeringRef and parent are immutable: both determine what the subscription is
+              billed for and which subscriptions provide its compatibility coverage, and a
+              subscription's activation is a billing epoch that cannot be re-pointed.
             properties:
               lifecycle:
                 description: |-
@@ -52,6 +56,10 @@ spec:
                   If both parent and targetRef are set:
                   - activation requires BOTH (parent active AND target Ready)
                   - deactivation happens if EITHER stops applying, except parent deactivation is ignored when onParentDeactivate=Orphan
+                  Note: onParentDeactivate=Orphan only governs the parent lifecycle link. It does not
+                  exempt the subscription from its offering's compatibility requirements: if the deactivating
+                  parent was the only active provider of a required offering, the subscription is still
+                  deactivated for the coverage gap.
                 properties:
                   onParentDeactivate:
                     default: Deactivate
@@ -59,6 +67,9 @@ spec:
                       OnParentDeactivate controls what happens when the parent subscription deactivates:
                       - Deactivate: this subscription also deactivates.
                       - Orphan: this subscription stays active independently, while retaining the parent reference for traceability.
+                      Orphan only detaches the parent lifecycle link; compatibility requirements are still enforced.
+                      An orphan whose required offering was covered only by the now-deactivated parent (and by no
+                      other active member of its family) is still deactivated, because keeping it active would violate the requirement.
                     enum:
                     - Deactivate
                     - Orphan
@@ -90,11 +101,16 @@ spec:
                   name:
                     type: string
                   namespace:
-                    description: Namespace of the Offering. If empty, defaults to
-                      the Subscription's namespace.
+                    description: |-
+                      Namespace of the referenced object. Must be set explicitly — references are
+                      never resolved against the referrer's namespace, so the same reference always
+                      means the same object no matter where it is authored. MinLength guards against
+                      an empty string, which +required alone would accept.
+                    minLength: 1
                     type: string
                 required:
                 - name
+                - namespace
                 type: object
               parent:
                 description: |-
@@ -107,11 +123,16 @@ spec:
                       name:
                         type: string
                       namespace:
-                        description: Namespace of the Offering. If empty, defaults
-                          to the Subscription's namespace.
+                        description: |-
+                          Namespace of the referenced object. Must be set explicitly — references are
+                          never resolved against the referrer's namespace, so the same reference always
+                          means the same object no matter where it is authored. MinLength guards against
+                          an empty string, which +required alone would accept.
+                        minLength: 1
                         type: string
                     required:
                     - name
+                    - namespace
                     type: object
                 required:
                 - subscriptionRef
@@ -121,6 +142,53 @@ spec:
                   usage of this subscription comes.
                 items:
                   properties:
+                    labelSelector:
+                      description: LabelSelector matches resources by their labels,
+                        using standard Kubernetes selector semantics.
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector
+                            requirements. The requirements are ANDed.
+                          items:
+                            description: |-
+                              A label selector requirement is a selector that contains values, a key, and an operator that
+                              relates the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector
+                                  applies to.
+                                type: string
+                              operator:
+                                description: |-
+                                  operator represents a key's relationship to a set of values.
+                                  Valid operators are In, NotIn, Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: |-
+                                  values is an array of string values. If the operator is In or NotIn,
+                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                  the values array must be empty. This array is replaced during a strategic
+                                  merge patch.
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            required:
+                            - key
+                            - operator
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                            map is equivalent to an element of matchExpressions, whose key field is "key", the
+                            operator is "In", and the values array contains only "value". The requirements are ANDed.
+                          type: object
+                      type: object
+                      x-kubernetes-map-type: atomic
                     name:
                       description: Name is the name of the specific resource instance.
                       type: string
@@ -141,13 +209,20 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-validations:
-                  - message: at least one of resourceType, name, or namespace must
-                      be set
+                  - message: at least one of resourceType, name, namespace, or labelSelector
+                      must be set
                     rule: has(self.resourceType) || has(self.name) || has(self.namespace)
+                      || has(self.labelSelector)
                 type: array
             required:
             - offeringRef
             type: object
+            x-kubernetes-validations:
+            - message: offeringRef is immutable; create a new Subscription instead
+              rule: self.offeringRef == oldSelf.offeringRef
+            - message: parent is immutable; create a new Subscription instead
+              rule: has(self.parent) == has(oldSelf.parent) && (!has(self.parent)
+                || self.parent == oldSelf.parent)
           status:
             description: |-
               SubscriptionStatus defines the observed state of Subscription.
@@ -156,11 +231,19 @@ spec:
               - parent.SubscriptionRef is set and the parent is active, and/or
               - targetRef is set and the target is Ready.
               Unset references are ignored. If neither reference is set, the subscription activates after spec validation.
+              In every case, if the bound offering declares required offerings, activation also requires those to be
+              covered by an active subscription elsewhere in the family (see Offering.compatibility).
             properties:
               activatedAt:
                 description: ActivatedAt is the time when the subscription became
                   active.
                 format: date-time
+                type: string
+              compatibilityRoot:
+                description: |-
+                  CompatibilityRoot is the metadata.uid of this subscription's root ancestor,
+                  resolved once by the controller. It identifies the connected family used
+                  for compatibility coverage.
                 type: string
               conditions:
                 description: Conditions represent the latest available observations
@@ -299,6 +382,7 @@ spec:
         type: object
     selectableFields:
     - jsonPath: .status.ready
+    - jsonPath: .status.compatibilityRoot
     served: true
     storage: true
     subresources:

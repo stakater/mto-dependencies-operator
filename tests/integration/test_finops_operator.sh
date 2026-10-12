@@ -181,10 +181,6 @@ cleanup_finopsoperator_test() {
     # Delete the Prometheus CR
     delete_cr_and_wait "prometheus" "$PROMETHEUS_CR_NAME" || true
 
-    # The chart annotates its CRDs with helm.sh/resource-policy: keep, so drop the
-    # one this test pre-created to leave a repeat run the same starting state
-    kubectl delete crd "$ADOPTED_CRD" --ignore-not-found || true
-
     # Clean up the test namespace
     cleanup_test_namespace || true
 }

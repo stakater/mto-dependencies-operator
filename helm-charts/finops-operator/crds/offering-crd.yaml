@@ -48,21 +48,31 @@ spec:
               compatibility:
                 description: |-
                   Compatibility can be used for ensuring that any subscription created for this offering
-                  has the required offerings in its parents or siblings
+                  has the required offerings actively subscribed elsewhere in the same family tree
                 properties:
                   requiredOfferings:
-                    description: RequiredOfferings lists offerings that must exist
-                      in parent or sibling subscriptions
+                    description: |-
+                      RequiredOfferings lists offerings that must be covered by an active subscription in
+                      the same family (the connected tree sharing a root ancestor) for a subscription to
+                      this offering to activate. Coverage spans the whole family EXCEPT the subscription's
+                      own subtree: ancestors, siblings, uncles, and cousins all count; the subscription's
+                      own children and descendants do not. A root subscription's subtree is the entire
+                      family, so a requirement-bearing root can never be covered.
                     items:
                       properties:
                         name:
                           type: string
                         namespace:
-                          description: Namespace of the Offering. If empty, defaults
-                            to the Subscription's namespace.
+                          description: |-
+                            Namespace of the referenced object. Must be set explicitly — references are
+                            never resolved against the referrer's namespace, so the same reference always
+                            means the same object no matter where it is authored. MinLength guards against
+                            an empty string, which +required alone would accept.
+                          minLength: 1
                           type: string
                       required:
                       - name
+                      - namespace
                       type: object
                     type: array
                 type: object

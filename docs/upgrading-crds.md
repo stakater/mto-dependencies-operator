@@ -1,10 +1,8 @@
 # Upgrading CRDs
 
-## Why this page exists
+## How CRDs reach the cluster
 
-Helm applies a chart's `crds/` directory only on `helm install`, never on `helm upgrade`. The operator reconciles each CR by running `helm upgrade` on an existing release, so any CRD parked in `crds/` was frozen at whatever shipped the day the release was first installed. Bumping a chart version delivered a new controller image against a stale CRD schema.
-
-The CRDs for the three operator dependencies now live in `templates/` instead, so every reconcile applies them:
+Three vendored charts ship CRDs:
 
 | Chart | CRDs |
 |-------|------|
@@ -12,100 +10,47 @@ The CRDs for the three operator dependencies now live in `templates/` instead, s
 | `dex-config-operator` | `clients`, `connectors`, `dexconfigs`, `localusers` (`.auth.stakater.com`) |
 | `template-operator-v2` | `templates`, `templateinstances` (`.templates.v2.stakater.com`) |
 
-Each carries `helm.sh/resource-policy: keep`, so deleting the CR uninstalls the release without dropping the CRD and garbage collecting every custom resource under it.
+They live in each chart's `crds/` directory, and Helm is not what keeps them current. Helm applies `crds/` only on `helm install`, never on `helm upgrade`, and the operator reconciles every CR with `helm upgrade`. Instead, the `apply-crds` initContainer on the operator deployment ([config/manager/manager.yaml](../config/manager/manager.yaml)) server-side applies a chart's `crds/*.yaml` on each pod start, with `force=true` so it wins any field conflict. A chart bump ships in a new operator image, the new pod applies the new schema before helm-operator starts, and the releases never see the CRDs at all.
 
-## One-time migration on existing clusters
+CRDs are applied only for charts that have a CR on the cluster, so a cluster that never enables FinOps carries no finops CRDs. The initContainer lists each of the three kinds and skips a chart whose list is empty. A CR created later gets its CRDs from Helm on install, at the chart version in that image, and the next pod start brings them current. The kind to chart table lives in the initContainer; `make lint` fails if a chart ships CRDs without an entry.
 
-CRDs created by Helm's CRD installer carry no Helm ownership metadata. The first upgrade after this change sees them as unowned and refuses to adopt them:
+The initContainer fails the pod on any apply or list error. That is deliberate: helm-operator must not run against CRDs in an unknown state.
+
+Nothing in this depends on where the operator pod runs or where the CRs live. The operator supports only the `AllNamespaces` install mode, so on OpenShift it is routinely in `openshift-operators` while MTO and its CRs are in `multi-tenant-operator`.
+
+## Why Helm must not own the CRDs
+
+MDO 0.0.14 and 0.0.15 rendered the CRDs from `templates/` so that upgrades would apply them. That put Helm's ownership check in the path: a release can only install over an existing resource whose `meta.helm.sh/release-name` and `meta.helm.sh/release-namespace` annotations match the release. An initContainer stamped those annotations using the operator pod's own namespace, which is wrong whenever the operator and the CRs are in different namespaces, and every install then failed with:
 
 ```
-Error: UPGRADE FAILED: rendered manifests contain a resource that already exists.
-Unable to continue with update: CustomResourceDefinition "..." exists and cannot be
-imported into the current release: invalid ownership metadata
+Unable to continue with install: CustomResourceDefinition "clients.auth.stakater.com" in namespace ""
+exists and cannot be imported into the current release: invalid ownership metadata; annotation
+validation error: key "meta.helm.sh/release-namespace" must equal "multi-tenant-operator":
+current value is "openshift-operators"
 ```
 
-Stamp the ownership metadata once, before upgrading. The release name is the CR name and the release namespace is the CR namespace, so both can be read off the CRs themselves.
+The ownership check runs before any Helm hook, so no hook can fix it, and the correct release namespace is unknowable at pod start. Taking the CRDs out of Helm's hands removes the problem rather than patching around it.
 
-Check what needs adopting first. Anything printed without `Helm` is not yet owned:
+## Migration safety
 
-```bash
-kubectl get crd \
-  -l '!app.kubernetes.io/managed-by' \
-  -o custom-columns=NAME:.metadata.name \
-  | grep -E 'finops.stakater.com|auth.stakater.com|templates.v2.stakater.com'
+Deleting a CRD garbage collects every instance under it, so the upgrade from 0.0.14 or 0.0.15 must never let Helm delete one. On the first `helm upgrade` after this change, the CRDs are present in the old release manifest and absent from the new one, so Helm considers deleting them. It first reads the live object and skips the delete when it carries `helm.sh/resource-policy: keep`.
+
+Every `crds/*.yaml` carries that annotation, and the initContainer applies it before helm-operator runs, so the annotation is on every live CRD before the first upgrade can happen. The templates-era CRDs already had it, since the templates included it. helm-operator logs the outcome on that first reconcile:
+
+```
+Skipping delete of "costjobs.finops.stakater.com" due to annotation [helm.sh/resource-policy=keep]
 ```
 
-Then run the adoption. It derives each release from its CR, skips CRDs that are not installed, and is safe to re-run:
+The deployment uses the `Recreate` strategy so the old pod, still rendering CRDs from its templates, can never reconcile after the new pod has applied the newer schema.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+Clusters on 0.0.13 or older never had Helm-owned CRDs. The initContainer updates their schema and nothing else changes.
 
-adopt() {
-  local cr_kind=$1; shift
-  local crds=("$@")
-  local name ns
-  while read -r name ns; do
-    [ -z "$name" ] && continue
-    echo "==> $cr_kind $ns/$name"
-    for crd in "${crds[@]}"; do
-      kubectl get crd "$crd" >/dev/null 2>&1 || { echo "    skip $crd (not present)"; continue; }
-      kubectl label crd "$crd" app.kubernetes.io/managed-by=Helm --overwrite
-      kubectl annotate crd "$crd" \
-        meta.helm.sh/release-name="$name" \
-        meta.helm.sh/release-namespace="$ns" --overwrite
-    done
-  done < <(kubectl get "$cr_kind" -A \
-    -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.namespace}{"\n"}{end}' 2>/dev/null)
-}
+The `meta.helm.sh/*` annotations and the `app.kubernetes.io/managed-by: Helm` label that 0.0.14 and 0.0.15 left on the CRDs are inert now and are not removed.
 
-adopt finopsoperators \
-  costjobs.finops.stakater.com finopsproviders.finops.stakater.com \
-  offerings.finops.stakater.com pricebooks.finops.stakater.com \
-  subscriptions.finops.stakater.com
-
-adopt dexconfigoperators \
-  clients.auth.stakater.com connectors.auth.stakater.com \
-  dexconfigs.auth.stakater.com localusers.auth.stakater.com
-
-adopt templateoperatorv2s \
-  templates.templates.v2.stakater.com templateinstances.templates.v2.stakater.com
-```
-
-Verify before upgrading. Every CRD should show `Helm` plus the owning release:
-
-```bash
-kubectl get crd -o custom-columns=\
-NAME:.metadata.name,\
-OWNER:.metadata.labels.app\\.kubernetes\\.io/managed-by,\
-RELEASE:.metadata.annotations.meta\\.helm\\.sh/release-name \
-  | grep -E 'finops.stakater.com|auth.stakater.com|templates.v2.stakater.com'
-```
-
-If a release is stuck because the reconcile already failed, the operator retries on its own once the metadata is in place. No restart needed.
-
-Clusters installing these dependencies for the first time need nothing.
-
-## Automatic adoption
-
-The manual script above is only needed for CRs whose names differ from the ones MTO creates. For those, the `adopt-crds` initContainer on the operator deployment ([config/manager/manager.yaml](../config/manager/manager.yaml)) stamps the same ownership metadata on every pod start. It finishes before helm-operator starts, so before any install or upgrade runs Helm's ownership check.
-
-It uses a fixed map of release name to CRD, matching the CR names MTO creates, with the operator's own namespace as the release namespace:
-
-| Release | CRDs |
-|---------|------|
-| `dex-config-operator` | `.auth.stakater.com` |
-| `tenant-operator-finops` | `.finops.stakater.com` |
-| `tenant-operator-template-operator-v2` | `.templates.v2.stakater.com` |
-
-CRDs not installed yet are skipped. Any other API error fails the init container, so the pod restarts and retries.
-
-A Helm `pre-install,pre-upgrade` hook cannot do this job: helm-operator checks ownership while building the release, before any hook runs, so the hook never fires in time.
-
-A chart resync that adds a CRD needs no entry here. A new CRD was never created unowned, so Helm creates and owns it.
+`tests/integration/test_crd_upgrade.sh` covers this path: a stale CRD and an instance exist before the operator pod starts, then a FinOpsOperator must still install, the instance must survive, and the CRD must carry the new schema.
 
 ## Adding or resyncing a chart
 
-`make resync-charts` promotes `crds/` into `templates/` automatically via the `promote-crds` helper in the Makefile. It also escapes `{{` in the CRD files, because CRD descriptions may document Go template syntax that Helm would otherwise try to evaluate.
+`make resync-charts` leaves `crds/` in place and runs the `keep-crds` helper in the Makefile, which adds `helm.sh/resource-policy: keep` to any CRD file that lacks it. A chart vendored by hand needs the same treatment.
 
-A chart vendored by hand needs the same treatment. `make lint` fails if any chart under `helm-charts/` still ships a `crds/` directory.
+`make lint` fails if a chart templates a CRD, or if any `crds/*.yaml` is not a single document with exactly one `metadata.name` at two-space indent and the keep annotation. The initContainer reads the CRD name from that line to build the apply URL.

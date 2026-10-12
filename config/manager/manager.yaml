@@ -22,6 +22,12 @@ spec:
       control-plane: controller-manager
       app.kubernetes.io/name: mto-dependencies-operator
   replicas: 1
+  # Never run two operator pods at once. Releases made by MDO 0.0.14 and 0.0.15
+  # still render CRDs from templates/, so during a rolling update the old pod could
+  # reconcile after the new pod's initContainer has applied newer CRDs and patch
+  # them back to the old schema.
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -57,18 +63,19 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      # Charts ship CRDs in templates/, and Helm refuses to upgrade over a CRD it does
-      # not own. This stamps Helm ownership onto CRDs left by older installs. It runs
-      # before helm-operator starts, so before any release is installed or upgraded.
-      # Release names are the fixed CR names MTO creates, in this namespace.
+      # Helm applies a chart's crds/ only on install, so the CRDs the vendored charts
+      # ship are kept current here instead: on each pod start, before helm-operator
+      # runs, every crds/*.yaml of each chart that has a CR on the cluster is
+      # server-side applied. Helm never owns them, so no release name or namespace
+      # is involved. A chart without a CR is skipped; when its CR arrives later Helm
+      # creates the CRDs on install and the next pod start brings them current.
+      # Any failure fails the pod, which keeps helm-operator from running against
+      # CRDs in an unknown state. `make lint` checks that every chart shipping CRDs
+      # has an entry in the list below, and that the files are laid out as the name
+      # extraction expects (one CRD per file, metadata.name at two-space indent).
       initContainers:
-      - name: adopt-crds
+      - name: apply-crds
         image: controller:latest
-        env:
-        - name: RELEASE_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         command:
         - /bin/sh
         - -c
@@ -76,33 +83,36 @@ spec:
         - |
           set -eu
           sa=/var/run/secrets/kubernetes.io/serviceaccount
-          api=https://kubernetes.default.svc/apis/apiextensions.k8s.io/v1/customresourcedefinitions
-          while read -r release crd; do
-            patch=$(printf \
-              '{"metadata":{"labels":{"app.kubernetes.io/managed-by":"Helm"},"annotations":{"meta.helm.sh/release-name":"%s","meta.helm.sh/release-namespace":"%s"}}}' \
-              "$release" "$RELEASE_NAMESPACE")
+          token=$(cat "$sa/token")
+          crds=https://kubernetes.default.svc/apis/apiextensions.k8s.io/v1/customresourcedefinitions
+          crs=https://kubernetes.default.svc/apis/dependencies.tenantoperator.stakater.com/v1alpha1
+          while read -r plural chart; do
             code=$(curl -sS -o /tmp/response -w '%{http_code}' \
-              --cacert "$sa/ca.crt" \
-              -H "Authorization: Bearer $(cat "$sa/token")" \
-              -H 'Content-Type: application/merge-patch+json' \
-              -X PATCH "$api/$crd" --data "$patch")
-            case "$code" in
-              200) echo "adopted $crd into $release" ;;
-              404) echo "skipped $crd (not installed yet)" ;;
-              *) echo "failed to adopt $crd (HTTP $code)"; cat /tmp/response; exit 1 ;;
-            esac
+              --cacert "$sa/ca.crt" -H "Authorization: Bearer $token" "$crs/$plural?limit=1")
+            [ "$code" = 200 ] || { echo "failed to list $plural (HTTP $code)"; cat /tmp/response; exit 1; }
+            # The API server pretty-prints for curl, so allow a space after the colon.
+            if grep -qE '"items": ?\[\]' /tmp/response; then
+              echo "skipped $chart (no $plural)"
+              continue
+            fi
+            for f in /opt/helm/helm-charts/$chart/crds/*.yaml; do
+              name=$(sed -n 's/^  name: *//p' "$f" | head -n1)
+              [ -n "$name" ] || { echo "no metadata.name in $f"; exit 1; }
+              code=$(curl -sS -o /tmp/response -w '%{http_code}' \
+                --cacert "$sa/ca.crt" -H "Authorization: Bearer $token" \
+                -H 'Content-Type: application/apply-patch+yaml' \
+                -X PATCH "$crds/$name?fieldManager=mto-dependencies-operator&force=true" \
+                --data-binary "@$f")
+              case "$code" in
+                200) echo "updated $name" ;;
+                201) echo "created $name" ;;
+                *) echo "failed to apply $name (HTTP $code)"; cat /tmp/response; exit 1 ;;
+              esac
+            done
           done <<'EOF'
-          dex-config-operator clients.auth.stakater.com
-          dex-config-operator connectors.auth.stakater.com
-          dex-config-operator dexconfigs.auth.stakater.com
-          dex-config-operator localusers.auth.stakater.com
-          tenant-operator-finops costjobs.finops.stakater.com
-          tenant-operator-finops finopsproviders.finops.stakater.com
-          tenant-operator-finops offerings.finops.stakater.com
-          tenant-operator-finops pricebooks.finops.stakater.com
-          tenant-operator-finops subscriptions.finops.stakater.com
-          tenant-operator-template-operator-v2 templateinstances.templates.v2.stakater.com
-          tenant-operator-template-operator-v2 templates.templates.v2.stakater.com
+          finopsoperators finops-operator
+          dexconfigoperators dex-config-operator
+          templateoperatorv2s template-operator-v2
           EOF
         securityContext:
           allowPrivilegeEscalation: false
